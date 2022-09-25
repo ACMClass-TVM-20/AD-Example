@@ -42,8 +42,22 @@ def map_add(bb, call):
     a, b = call.args
     return bb.call_te(topi.add, a, b)
 
+def map_sub(bb, call):
+    return bb.call_te(topi.subtract, call.args[0], call.args[1])
+
+def map_multiply(bb, call):
+    return bb.call_te(topi.multiply, call.args[0], call.args[1])
+
+def map_transpose(bb, call):
+    return bb.call_te(topi.transpose, call.args[0])
+
 def map_relu(bb, call):
     return bb.call_te(topi.nn.relu, call.args[0])
+
+def map_gradrelu(bb, call):
+    def _gradrelu(x):
+        return te.compute(shape=x.shape, fcompute=lambda *indices: te.if_then_else(x(*indices)>0, 1.0, 0.0), name="gradrelu")
+    return bb.call_te(_gradrelu, call.args[0])
 
 def map_matmul(bb, call):
     return bb.call_te(topi.matmul, call.args[0], call.args[1])
@@ -51,18 +65,21 @@ def map_matmul(bb, call):
 def map_softmax(bb, call):
     return bb.call_te(topi.nn.softmax, call.args[0])
 
-@tvm.te.tag_scope(tag="crossent_output")
-def crossent(x, y):
-    i = te.reduce_axis((0, 10), name="i")
-    return te.compute(shape=(1,), fcompute=lambda _: te.sum(-y[0, i] * te.log(x[0, i]), axis=i), name="crossent")
-
 def map_crossent(bb, call):
-    return bb.call_te(crossent, call.args[0], call.args[1])
+    def _crossent(x, y):
+        i = te.reduce_axis((0, 10), name="i")
+        result = te.compute(shape=(1, 1), fcompute=lambda j, k: te.sum(-y[0, i] * te.log(x[0, i]), axis=i), name="crossent")
+        return te.compute(shape=result.shape, fcompute=lambda *indices: te.if_then_else(te.isnan(result(*indices)), 0.0, result(*indices)), name="crossent_process")
+    return bb.call_te(_crossent, call.args[0], call.args[1])
 
 op_map = {
   "relax.nn.dense": map_dense,
   "relax.add": map_add,
+  "relax.sub": map_sub,
+  "relax.multiply": map_multiply,
+  "relax.transpose": map_transpose,
   "relax.nn.relu": map_relu,
+  "relax.nn.gradrelu": map_gradrelu,
   "relax.matmul": map_matmul,
   "relax.nn.softmax": map_softmax,
   "relax.nn.crossent": map_crossent
