@@ -145,11 +145,10 @@ print("Test Predict: ", class_names[pred_kind[0]])
 print("True: ", class_names[label[0]])
 """
 
-nd_params = {k: tvm.nd.array(v) for k, v in mlp_params.items()}
 success, total = 0, 0
-lr = 10
+lr = 0.03
 
-batch_size = 256
+batch_size = 64
 total_loss = 0
 epoch = 0
 gradient_dict = {}
@@ -158,6 +157,7 @@ for arg in arg_names:
     gradient_dict[arg] = 0
 
 for img, label in loader:
+    nd_params = {k: tvm.nd.array(v) for k, v in mlp_params.items()}
     data_nd = tvm.nd.array(img.reshape(1, 784))
     label_nd = tvm.nd.array(np.array([[1 if i == label[0] else 0 for i in range(10)]]).astype(np.float32))
     output, loss, w0_grad, b0_grad, w1_grad, b1_grad = vm["main"](data_nd, nd_params["w0"], nd_params["b0"], nd_params["w1"], nd_params["b1"], label_nd)
@@ -165,6 +165,7 @@ for img, label in loader:
     total += 1
     if pred_kind[0] == label[0]:
         success += 1
+    
     """
     print("label: ", label_nd)
     print("output:", output)
