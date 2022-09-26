@@ -102,25 +102,26 @@ class AutoDiffMLP:
             # crossEnt-softMax derive
             out_adjoint = relax.sub(lv4, label) # shape: (1, 10)
 
-            # b1_adjoint  = out_adjoint
-            # lv3_adjoint = out_adjoint
+            b1_adjoint  = out_adjoint
+            lv3_adjoint = out_adjoint
+
             lv2_trans = relax.transpose(lv2)  # shape: (128, 1)
             w1_trans  = relax.transpose(w1)   # shape: (10, 128)
-            lv2_adjoint = relax.matmul(out_adjoint, w1_trans) # shape: (1, 128)
-            w1_adjoint  = relax.matmul(lv2_trans, out_adjoint) # shape: (128, 10)
+            lv2_adjoint = relax.matmul(lv3_adjoint, w1_trans) # shape: (1, 128)
+            w1_adjoint  = relax.matmul(lv2_trans, lv3_adjoint) # shape: (128, 10)
 
             lv1_gradrelu = relax.nn.gradrelu(lv1) # shape: (1, 128)
             lv1_adjoint  = relax.multiply(lv2_adjoint, lv1_gradrelu) # shape: (1, 128)
 
-            # b0_adjoint = lv1_adjoint
-            # lv0_adjoint = lv1_adjoint
+            b0_adjoint = lv1_adjoint
+            lv0_adjoint = lv1_adjoint
 
             x_trans = relax.transpose(x) # shape: (784, 1)
             w0_trans = relax.transpose(w0)
-            w0_adjoint = relax.matmul(x_trans, lv1_adjoint) # shape: (784, 128)
+            w0_adjoint = relax.matmul(x_trans, lv0_adjoint) # shape: (784, 128)
 
-            R.output(out, loss, w0_adjoint, lv1_adjoint, w1_adjoint, out_adjoint)
-        return out, loss, w0_adjoint, lv1_adjoint, w1_adjoint, out_adjoint
+            R.output(out, loss, w0_adjoint, b0_adjoint, w1_adjoint, b1_adjoint)
+        return out, loss, w0_adjoint, b0_adjoint, w1_adjoint, b1_adjoint
 
 
 TIRModule = LowerToTensorIRPass()(AutoDiffMLP)
