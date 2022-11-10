@@ -44,7 +44,7 @@ def map_add(bb, call):
     a, b = call.args
     return bb.call_te(topi.add, a, b)
 
-def map_sub(bb, call):
+def map_subtract(bb, call):
     return bb.call_te(topi.subtract, call.args[0], call.args[1])
 
 def map_multiply(bb, call):
@@ -83,6 +83,12 @@ def map_softmax_cross_entropy(bb, call):
     func = lambda x, y: te_cross_entropy(topi.nn.softmax(x), y)
     return bb.call_te(func, call.args[0], call.args[1])
 
+def map_sigmoid(bb, call):
+    return bb.call_te(topi.sigmoid, call.args[0])
+
+def map_tanh(bb, call):
+    return bb.call_te(topi.tanh, call.args[0])
+
 def map_negative(bb, call):
     return bb.call_te(topi.negative, call.args[0])
 
@@ -116,7 +122,7 @@ def map_ones(bb, call):
 op_map = {
   "relax.nn.dense": map_dense,
   "relax.add": map_add,
-  "relax.sub": map_sub,
+  "relax.subtract": map_subtract,
   "relax.multiply": map_multiply,
   "relax.transpose": map_transpose,
   "relax.nn.relu": map_relu,
@@ -125,6 +131,8 @@ op_map = {
   "relax.nn.softmax": map_softmax,
   "relax.nn.cross_entropy": map_cross_entropy,
   "relax.nn.softmax_cross_entropy": map_softmax_cross_entropy,
+  "relax.nn.sigmoid": map_sigmoid,
+  "relax.nn.tanh": map_tanh,
   "relax.negative": map_negative,
   "relax.ones_like": map_ones_like,
   "relax.zeros_like": map_zeros_like,
@@ -132,7 +140,7 @@ op_map = {
   "relax.log": map_log,
   "relax.sum": map_sum,
   "relax.zeros": map_zeros,
-  "relax.ones": map_ones,
+  "relax.ones": map_ones
 }
 
 @tvm.ir.transform.module_pass(opt_level=0, name="LowerToTensorIR")
