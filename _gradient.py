@@ -1,26 +1,19 @@
 from __future__ import annotations
 
-import numpy as np
-import tvm
-from tvm import relax, te, topi
-from tvm.ir.module import IRModule
 from tvm.relay.op import register_gradient
-from tvm.script import relax as R
-from tvm.script import tir as T
-
+import tvm.relax.op.nn as nn
 from tvm.relax.op import (
 	collapse_sum_like,
 	log,
-	matmul,
 	multiply,
 	negative,
-	sub,
-	transpose
-)
-
-from tvm.relax.op.nn import (
-	gradrelu_, 
-	softmax
+	subtract,
+	transpose,
+	ones_like,
+	gradrelu_,
+	softmax,
+	sigmoid,
+	tanh
 )
 
 @register_gradient("relax.add")
@@ -28,8 +21,8 @@ def add_grad(orig, grad):
 	"""Returns [grad, grad]"""
 	return [collapse_sum_like(grad, orig.args[0]), collapse_sum_like(grad, orig.args[1])]
 
-@register_gradient("relax.sub")
-def sub_grad(orig, grad):
+@register_gradient("relax.subtract")
+def subtract_grad(orig, grad):
 	"""Returns [grad, -grad]"""
 	return [collapse_sum_like(grad, orig.args[0]), collapse_sum_like(negative(grad), orig.args[1])]
 
@@ -51,14 +44,19 @@ def relu_grad(orig, grad):
 	return [multiply(grad, gradrelu_(orig.args[0]))]
 
 
-@register_gradient("relax.matmul")
+@register_gradient("relax.nn.matmul")
 def matmul_grad(orig, grad):
 	"""Returns [grad' @ tensor_b, tensor_a @ grad']"""
 	tensor_a, tensor_b = orig.args
 	return [
-		collapse_sum_like(matmul(grad, transpose(tensor_b)), tensor_a),
-		collapse_sum_like(matmul(transpose(tensor_a), grad), tensor_b),
+		collapse_sum_like(nn.matmul(grad, transpose(tensor_b)), tensor_a),
+		collapse_sum_like(nn.matmul(transpose(tensor_a), grad), tensor_b),
 	]
+
+@register_gradient("relax.sum")
+def sum_grad(orig, grad):
+	"""Returns [grad * ones_like(x)]"""
+	return [multiply(grad, ones_like(orig.args[0]))]
 
 
 # @register_gradient("relax.nn.softmax")
@@ -79,4 +77,15 @@ def matmul_grad(orig, grad):
 @register_gradient("relax.nn.softmax_cross_entropy")
 def softmax_cross_entropy_grad(orig, grad):
 	y_hat = softmax(orig.args[0])
-	return [sub(y_hat, orig.args[1]), negative(log(y_hat))]
+	return [multiply(grad, subtract(y_hat, orig.args[1])), multiply(grad, negative(log(y_hat)))]
+	# return [subtract(y_hat, orig.args[1]), negative(log(y_hat))]
+
+@register_gradient("relax.nn.sigmoid")
+def sigmoid_grad(orig, grad):
+	out = sigmoid(orig.args[0])
+	return [multiply(grad, multiply(out, subtract(ones_like(out), out)))]
+
+@register_gradient("relax.nn.tanh")
+def tanh_grad(orig, grad):
+	out = tanh(orig.args[0])
+	return [multiply(grad, subtract(ones_like(out), multiply(out, out)))]

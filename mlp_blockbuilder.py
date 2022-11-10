@@ -48,8 +48,9 @@ def n_layer_perceptron(layers, in_size, out_size, hidden_size, batch_size=1):
             loss = bb.emit(relax.op.nn.softmax_cross_entropy(current, label_list[0]))
             gv0 = bb.emit_output(current)
             gv1 = bb.emit_output(loss)
-        bb.emit_func_output((gv0, gv1))
-    return bb.get(), relax.transform.SimpleAD("MLP", gv1, w_list + b_list)(bb.get())
+        bb.emit_func_output(gv1)
+    mod = bb.get()
+    return mod, relax.transform.SimpleAD(mod.get_global_var("MLP"), w_list + b_list)(mod)
 
 def build_vm(layers, in_size, out_size, hidden_size, batch_size=1):
     mod1, mod2 = n_layer_perceptron(layers, in_size, out_size, hidden_size, batch_size)
@@ -150,9 +151,7 @@ for img, label in loader:
     data_nd = img.reshape((batch_size, in_size))
     label_nd = np.array([[1 if i == label[j] else 0 for i in range(out_size)] for j in range(batch_size)]).astype(np.float32)
     args = to_tvm([data_nd] + w_list + b_list + [label_nd])
-    output, *grads = vm["MLP"](*args)
-    output, loss = output[0], output[1]
-    pred_kind = np.argmax(output.numpy(), axis=1)
+    loss, grads = vm["MLP"](*args)
     
     """
     print("label: ", label_nd)
@@ -177,8 +176,6 @@ for img, label in loader:
             cnt += 1
     else:
         total += batch_size
-        success += np.count_nonzero(pred_kind == label.numpy())
     
 
-print("Prediction Rate On TestSet: ", success / total)
 print("time: ", time.perf_counter() - time0)

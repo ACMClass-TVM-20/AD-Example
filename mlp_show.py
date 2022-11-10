@@ -21,12 +21,12 @@ class MultiLayerPerceptron:
         # block 0
         with R.dataflow():
             # linear0
-            lv0 = relax.matmul(x, w0)
+            lv0 = relax.nn.matmul(x, w0)
             lv1 = relax.add(lv0, b0)
             # relu0
             lv2 = relax.nn.relu(lv1)
             # linear1
-            lv3 = relax.matmul(lv2, w1)
+            lv3 = relax.nn.matmul(lv2, w1)
             out = relax.add(lv3, b1)
             loss = relax.nn.softmax_cross_entropy(out, label)
             R.output(out, loss)
@@ -36,7 +36,9 @@ class MultiLayerPerceptron:
 print("Before: ")
 MultiLayerPerceptron.show()
 
-
-AutoDiffMLP = relax.transform.SimpleAD(func_name="main", target_names="loss", require_grad_names=["w0", "b0", "w1", "b1"])(MultiLayerPerceptron)
+AutoDiffMLP = relax.transform.SimpleAD(func_name="main", target="loss", require_grads=["w0", "b0", "w1", "b1"])(MultiLayerPerceptron)
 print("After: ")
 AutoDiffMLP.show()
+
+LowerToTensorIRPass()(AutoDiffMLP)# .show()
+
