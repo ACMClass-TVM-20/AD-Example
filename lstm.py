@@ -202,7 +202,7 @@ def train_lstm(): # in dataset
             #         mod["LSTM"].params[j].shape
             #     ))
             
-            loss, grads = vm["LSTM"](*inputs_tvm)
+            loss, grads = vm["LSTM_adjoint"](*inputs_tvm)
             assert len(params) == len(grads)    
             for j in range(len(params)):
                 params[j] -= lr * grads[j].numpy()
@@ -221,7 +221,7 @@ def train_lstm(): # in dataset
             valid_batch_num += 1
             inputs = make_inputs(max_len, hidden_size, e, l) + params
             inputs_tvm = [tvm.nd.array(i) for i in inputs]
-            loss, grads = vm["LSTM"](*inputs_tvm)
+            loss, grads = vm["LSTM_adjoint"](*inputs_tvm)
             valid_loss += int(loss.numpy())
         valid_loss /= valid_batch_num
         print("valid_loss = " + str(valid_loss))

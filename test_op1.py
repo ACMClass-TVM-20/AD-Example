@@ -21,7 +21,6 @@ import pytest
 import tvm
 import tvm.script
 from tvm import relax
-from tvm import relax as rx
 from tvm.ir.base import assert_structural_equal
 from tvm.relay.testing import rand
 # from tvm.script import relax as R
@@ -35,12 +34,29 @@ from utils import LowerToTensorIRPass
 @I.ir_module
 class Test:
     @R.function
-    def main(x: R.Tensor((5, 5), "float32"),
-            y: R.Tensor((5, 5), "float32")):
-        with R.dataflow():
-            lv1 = x
-            lv2 = y
-            R.output(lv1, lv2)
-        return relax.Tuple((lv1, lv2))
+    def main(x: R.Tensor((1, 784), "float32"),
+             w0: R.Tensor((784, 128), "float32"),
+             b0: R.Tensor((128,), "float32"),
+             w1: R.Tensor((128, 10), "float32"),
+             b1: R.Tensor((10,), "float32")):
 
-print(Test["main"].ret_shape.fields)
+        # block 0
+        with R.dataflow():
+            # linear0
+            lv0 = R.matmul(x, w0)
+            lv1 = R.add(lv0, b0)
+            # relu0
+            lv2 = R.relu(lv1)
+            # linear1
+            lv3 = R.matmul(lv2, w1)
+            out = R.add(lv3, b1)
+            R.output(out)
+        return out
+
+label = relax.Var("label", [1, 10], relax.DynTensorType(dtype="float32"))
+
+loss = relax.Var("loss", [], relax.DynTensorType(dtype="float32"))
+
+from tvm.ir.op import Op
+
+Test1 = relax.transform.AppendCall(func=Test.get_global_var("main"), op=Op.get("relax.nn.softmax_cross_entropy"), out=loss, args=[Test["main"].body.body, label])(Test)

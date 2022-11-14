@@ -215,7 +215,7 @@ lr = 0.03
 
 batch_size = 64
 total_loss = 0
-epoch = 0
+step = 0
 gradient_dict = {}
 arg_names = ["w0", "b0", "w1", "b1"]
 for arg in arg_names:
@@ -240,15 +240,15 @@ for img, label in loader:
     # print("b1_grad", b1_grad)
     # break
 
-    epoch += 1
+    step += 1
     total_loss += loss.numpy()
     gradient_dict["w0"] += w0_grad.numpy()
     gradient_dict["b0"] += b0_grad.numpy()
     gradient_dict["w1"] += w1_grad.numpy()
     gradient_dict["b1"] += b1_grad.numpy()
 
-    if epoch % batch_size == 0:
-        print("epoch={}, loss={}".format(epoch, total_loss))
+    if step % batch_size == 0:
+        print("step={}, loss={}".format(step, total_loss))
 
         for arg in gradient_dict:
             mlp_params[arg] -= lr * (gradient_dict[arg] / batch_size)

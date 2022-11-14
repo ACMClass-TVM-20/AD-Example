@@ -31,78 +31,23 @@ from tvm.script._parser import ir as I, relax as R, tir as T
 
 import _gradient
 from utils import LowerToTensorIRPass
-
+ 
 @I.ir_module
 class Before:
     @R.function
-    def main(x: R.Tensor((5, 5), "float32"),
-                y: R.Tensor((5, 5), "float32"),
-                z: R.Tensor((5, 5), "float32"),
-                u: R.Tensor((5, 5), "float32")):
+    def main(x1: R.Tensor((1, 10), "float32"),
+            y1: R.Tensor((1, 10), "float32")):
         with R.dataflow():
-            lv1 = R.add(x, y)
-            lv2 = R.subtract(z, u)
-            lv3 = R.add(y, z)
-            lv4 = R.add(lv1, lv2)
-            lv5 = R.add(lv4, lv3)
-            lv6 = R.sum(lv5)
-            R.output(lv6)
-        return lv6
+            t1 = relax.Tuple((x1, y1))
+            loss = R.softmax_cross_entropy(relax.TupleGetItem(t1, 0), relax.TupleGetItem(t1, 1))
+            R.output(loss)
+        return loss
 
-@I.ir_module
-class Expected1:
-    @R.function
-    def main(x: R.Tensor((5, 5), "float32"),
-                y: R.Tensor((5, 5), "float32"),
-                z: R.Tensor((5, 5), "float32"),
-                u: R.Tensor((5, 5), "float32")):
-        with R.dataflow():
-            lv1 = R.add(x, y)
-            lv2 = R.subtract(z, u)
-            lv3 = R.add(y, z)
-            lv4 = R.add(lv1, lv2)
-            lv5 = R.add(lv4, lv3)
-            lv6 = R.sum(lv5)
-            R.output(lv6)
-        return lv6
-    
-    @R.function
-    def main_adjoint(x: R.Tensor((5, 5), "float32"),
-                y: R.Tensor((5, 5), "float32"),
-                z: R.Tensor((5, 5), "float32"),
-                u: R.Tensor((5, 5), "float32")):
-        with R.dataflow():
-            lv1 = R.add(x, y)
-            lv2 = R.subtract(z, u)
-            lv3 = R.add(y, z)
-            lv4 = R.add(lv1, lv2)
-            lv5 = R.add(lv4, lv3)
-            lv6 = R.sum(lv5)
-            lv6_adjoint = R.ones_like(lv6)
-            lv = R.ones_like(lv5)
-            lv5_adjoint = R.multiply(lv6_adjoint, lv)
-            lv4_adjoint = R.collapse_sum_like(lv5_adjoint, lv4)
-            lv3_adjoint = R.collapse_sum_like(lv5_adjoint, lv3)
-            lv2_adjoint = R.collapse_sum_like(lv4_adjoint, lv2)
-            lv1_adjoint = R.collapse_sum_like(lv4_adjoint, lv1)
-            x_adjoint = R.collapse_sum_like(lv1_adjoint, x)
-            lv11 = R.collapse_sum_like(lv3_adjoint, y)
-            lv21 = R.collapse_sum_like(lv1_adjoint, y)
-            y_adjoint = R.add(lv11, lv21)
-            lv31 = R.collapse_sum_like(lv3_adjoint, z)
-            lv41 = R.collapse_sum_like(lv2_adjoint, z)
-            z_adjoint = R.add(lv31, lv41)
-            lv51 = R.negative(lv2_adjoint)
-            u_adjoint = R.collapse_sum_like(lv51, u)
-            R.output(lv6, x_adjoint, y_adjoint, z_adjoint, u_adjoint)
-        return relax.Tuple( (lv6, relax.Tuple( (x_adjoint, y_adjoint, z_adjoint, u_adjoint) )) )
+print("Before: ", Before)
 
-After1 = relax.transform.SimpleAD(Before.get_global_var("main"))(Before)
+After = relax.transform.SimpleAD(Before.get_global_var("main"))(Before)
 
-assert_structural_equal(After1["main_adjoint"], Expected1["main_adjoint"])
+print("After: ", After)
 
-# print(After1["main_adjoint"].body.shape.fields)
-# print(Expected1["main_adjoint"].body.shape.fields)
-# print(After1["main_adjoint"].body.shape)
-# print(Expected1["main"].body.shape)
-# print(Expected1["main_adjoint"].body.shape)
+for i in range(len(Before["main"].params)):
+    print(i, Before["main"].params[i] == After["main_adjoint"].params[i])
