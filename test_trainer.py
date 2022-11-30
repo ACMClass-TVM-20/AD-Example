@@ -16,7 +16,7 @@
 # under the License.
 import tvm
 import numpy as np
-from tvm.script._parser import ir as I, relax as R, tir as T
+from tvm.script.parser import ir as I, relax as R, tir as T
 from tvm.relax.training import Trainer, SGD, MomentumSGD
 
 @I.ir_module
@@ -56,28 +56,28 @@ loader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=True)
 
 trainer1 = Trainer(backbone=MLP,
                 func_name="main",
-                partial_optimizer=SGD(None, 0.01)
+                parameters_indices=range(1, 5)
             )
 
 trainer2 = Trainer(backbone=MLP,
                 func_name="main",
-                partial_optimizer=MomentumSGD(None, 0.001, 0.9, 0.1, 0.001, True)
+                parameters_indices=range(1, 5)
             )
 
+trainer1.prepare("relax.nn.softmax_cross_entropy", SGD(None, 0.01))
+trainer2.prepare("relax.nn.softmax_cross_entropy", MomentumSGD(None, 0.001, 0.9, 0.1, 0.001, True))
 
 def trainer_setting_pipeline(trainer):
-    trainer.set_parameters(range(1, 5))
-    trainer.set_loss("relax.nn.softmax_cross_entropy", label_shape=(1, 10))
     trainer.set_vm_config(target="llvm", device=tvm.cpu())
     trainer.setup()
     trainer.rand_init_params()
     return trainer_setting_pipeline
 
+trainer_setting_pipeline(trainer1)(trainer2)
+
 def _hook(dataline):
     return np.array(dataline[0].reshape(1, 784)).astype(np.float32), \
         np.array([[1 if i == dataline[1][0] else 0 for i in range(10)]]).astype(np.float32)
-
-trainer_setting_pipeline(trainer1)(trainer2)
 
 # trainer1.train(epoch=10, loader=loader, data_hook=_hook, show_detail=True)
 trainer2.train(epoch=10, loader=loader, data_hook=_hook, show_detail=True)

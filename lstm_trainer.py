@@ -130,9 +130,8 @@ def train_lstm(): # in dataset
     print(max_len, in_size, hidden_size, out_size, batch_size)
 
     mod = build_lstm_mod(max_len, in_size, hidden_size, out_size, batch_size)
-    trainer = Trainer(backbone=mod, func_name="LSTM", partial_optimizer=SGD(None, 0.01))
-    trainer.set_parameters(range(max_len+2, len(mod["LSTM"].params)))
-    trainer.set_loss("relax.nn.softmax_cross_entropy", label_shape=(batch_size, out_size))
+    trainer = Trainer(backbone=mod, func_name="LSTM", parameters_indices=range(max_len+2, len(mod["LSTM"].params)))
+    trainer.prepare("relax.nn.softmax_cross_entropy", SGD(None, 0.01))
     trainer.set_vm_config(target="llvm", device=tvm.cpu())
     trainer.setup()
 
