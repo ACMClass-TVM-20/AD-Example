@@ -1,5 +1,10 @@
+"""This file shows how to use the Relax Optimizer APIs to optimize parameters.
+
+We will use the SGD algorithm to minimize the L2 distance between input parameter x and label y.
+Both of them are float32 Tensors of shape (3, 3).
+"""
+
 import numpy as np
-import pytest
 import tvm
 from tvm.relax.block_builder import BlockBuilder
 from tvm.runtime.container import tuple_object
@@ -13,14 +18,14 @@ from tvm.relax.transform import LegalizeOps
 x = relax.Var("x", R.Tensor((3, 3), "float32"))
 y = relax.Var("y", R.Tensor((3, 3), "float32"))
 
-bb = BlockBuilder()
-with bb.function("main", [x, y]):
-    with bb.dataflow():
-        lv = bb.emit(R.subtract(x, y))
-        lv1 = bb.emit(R.multiply(lv, lv))
-        gv = bb.emit_output(R.sum(lv1))
-    bb.emit_func_output(gv)
-mod = bb.get()
+builder = BlockBuilder()
+with builder.function("main", [x, y]):
+    with builder.dataflow():
+        lv = builder.emit(R.subtract(x, y))
+        lv1 = builder.emit(R.multiply(lv, lv))
+        gv = builder.emit_output(R.sum(lv1))
+    builder.emit_func_output(gv)
+mod = builder.get()
 
 # AD process, differentiate "main" and generate a new function "main_adjoint"
 mod = relax.transform.Gradient(mod.get_global_var("main"), x)(mod)

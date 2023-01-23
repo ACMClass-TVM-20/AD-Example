@@ -100,7 +100,7 @@ def build_lstm_mod(steps_num, in_size, hidden_size, out_size, batch_size=1):
             loss = bb.emit_output(relax.op.nn.softmax_cross_entropy(out, y))
         bb.emit_func_output(loss)
     mod = bb.get()
-    return relax.transform.SimpleAD(mod.get_global_var("LSTM"), require_grads=list(params.values()))(mod)
+    return relax.transform.Gradient(mod.get_global_var("LSTM"), require_grads=list(params.values()))(mod)
 
 
 mod = build_lstm_mod(3, 10, 10, 20, 1)

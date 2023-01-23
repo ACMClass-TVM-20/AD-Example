@@ -3,14 +3,12 @@ import numpy as np
 import tvm
 from tvm.ir.module import IRModule
 from tvm import topi, relax, te
-from tvm.relax.training.optimizer import MomentumSGD
 from tvm.runtime.container import tuple_object
-from tvm.script import tir as T
-from tvm.script import relax as R
+from tvm.script.parser import ir as I, relax as R, tir as T
 from tvm.relax.testing import dump_ast
 import tvm.script
 import _gradient
-from tvm.relax.training import Optimizer, SGD
+from tvm.relax.training import Optimizer, SGD, MomentumSGD
 
 from tvm.ir.base import assert_structural_equal
 import torch
@@ -21,7 +19,7 @@ np.random.seed(1)
 test_data = torchvision.datasets.FashionMNIST(
     root="data",
     train=False,
-    download=False,
+    download=True,
     transform=torchvision.transforms.ToTensor()
 )
 
@@ -59,83 +57,55 @@ from utils import LowerToTensorIRPass
     model
 """
 
-@tvm.script.ir_module
+@I.ir_module
 class MultiLayerPerceptron:
     @R.function
-    def main(w0: Tensor((784, 128), "float32"),
-             b0: Tensor((128,), "float32"),
-             w1: Tensor((128, 10), "float32"),
-             b1: Tensor((10,), "float32"),
-             x: Tensor((1, 784), "float32"),
-             label: Tensor((1,10), "float32")):
+    def main(w0: R.Tensor((784, 128), "float32"),
+             b0: R.Tensor((128,), "float32"),
+             w1: R.Tensor((128, 10), "float32"),
+             b1: R.Tensor((10,), "float32"),
+             x: R.Tensor((1, 784), "float32"),
+             label: R.Tensor((1,10), "float32")):
         # block 0
         with R.dataflow():
             # linear0
-            lv0 = relax.nn.matmul(x, w0)
-            lv1 = relax.add(lv0, b0)
+            lv0 = R.matmul(x, w0)
+            lv1 = R.add(lv0, b0)
             # relu0
-            lv2 = relax.nn.relu(lv1)
+            lv2 = R.relu(lv1)
             # linear1
-            lv3 = relax.nn.matmul(lv2, w1)
-            out = relax.add(lv3, b1)
-            loss = relax.nn.softmax_cross_entropy(out, label)
+            lv3 = R.matmul(lv2, w1)
+            out = R.add(lv3, b1)
+            loss = R.softmax_cross_entropy(out, label)
             R.output(loss)
         return loss
-    # @R.function
-    # def SGD(params: Tuple(Tensor((784, 128), "float32"), Tensor((128,), "float32"), Tensor((128, 10), "float32"), Tensor((10,), "float32")),
-    #         gradients: Tuple(Tensor((784, 128), "float32"), Tensor((128,), "float32"), Tensor((128, 10), "float32"), Tensor((10,), "float32")),
-    #         optim_states: Tuple(Tensor((), "float32"))):
-    #     with R.dataflow():
-    #         w01: Tensor((784, 128), "float32") = params[0]
-    #         b01: Tensor((128,), "float32") = params[1]
-    #         w11: Tensor((128, 10), "float32") = params[2]
-    #         b11: Tensor((10,), "float32") = params[3]
-    #         w0_adjoint1: Tensor((784, 128), "float32") = gradients[0]
-    #         b0_adjoint1: Tensor((128,), "float32") = gradients[1]
-    #         w1_adjoint1: Tensor((128, 10), "float32") = gradients[2]
-    #         b1_adjoint1: Tensor((10,), "float32") = gradients[3]
-    #         num_steps: Tensor((), "float32") = optim_states[0]
-    #         lv9: Tensor((), "float32") = relax.add(num_steps, relax.const(1.0))
-    #         lv12: Tensor((784, 128), "float32") = relax.multiply(relax.const(0.03), w0_adjoint1)
-    #         lv22: Tensor((784, 128), "float32") = relax.sub(w01, lv12)
-    #         lv32: Tensor((128,), "float32") = relax.multiply(relax.const(0.03), b0_adjoint1)
-    #         lv41: Tensor((128,), "float32") = relax.sub(b01, lv32)
-    #         lv51: Tensor((128, 10), "float32") = relax.multiply(relax.const(0.03), w1_adjoint1)
-    #         lv61: Tensor((128, 10), "float32") = relax.sub(w11, lv51)
-    #         lv71: Tensor((10,), "float32") = relax.multiply(relax.const(0.03), b1_adjoint1)
-    #         lv81: Tensor((10,), "float32") = relax.sub(b11, lv71)
-    #         gv: Tuple(Tensor((784, 128), "float32"), Tensor((128,), "float32"), Tensor((128, 10), "float32"), Tensor((10,), "float32")) = (lv22, lv41, lv61, lv81)
-    #         gv1: Tuple(Tensor((), "float32")) = (lv9,)
-    #         R.output(gv, gv1)
-    #     return (gv, gv1)
-
-
 
 # MultiLayerPerceptron.show()
 
 # print(dump_ast(MultiLayerPerceptron["main"]))
 
-
-AutoDiffMLP = relax.transform.SimpleAD(MultiLayerPerceptron.get_global_var("main"), require_grads=[0, 1, 2, 3])(MultiLayerPerceptron)
-# AutoDiffMLP.show()
+ad_var = MultiLayerPerceptron["main"].params[:-2]
+AutoDiffMLP = relax.transform.Gradient(MultiLayerPerceptron.get_global_var("main"), require_grads=ad_var)(MultiLayerPerceptron)
+AutoDiffMLP.show()
 
 param_list = AutoDiffMLP["main"].params[:-2]
 lr = 0.001
-opt = MomentumSGD(param_list, lr, 0.9, 0.1, 0.001, True)
-AutoDiffMLP["MomentumSGD"] = opt.get_function()
+opt = SGD(param_list, lr)
+# opt = MomentumSGD(param_list, lr, 0.9, 0.1, 0.001, True)
+AutoDiffMLP["SGD"] = opt.get_function()
 AutoDiffMLP.show()
 
 # # assert_structural_equal(AutoDiffMLP["main_adjoint"], Expected["main_adjoint"])
-TIRModule = LowerToTensorIRPass()(AutoDiffMLP)
-TIRModule.show()
+# TIRModule = LowerToTensorIRPass()(AutoDiffMLP)
+# TIRModule.show()
 
-# # build and run
-ex = relax.vm.build(TIRModule, target="llvm")
-vm = relax.VirtualMachine(ex, tvm.cpu())
+# # # build and run
+# ex = relax.vm.build(TIRModule, target="llvm")
+# vm = relax.VirtualMachine(ex, tvm.cpu())
 
-"""
-    train
-"""
+# """
+#     train
+# """
 
 # success, total = 0, 0
 batch_size = 64

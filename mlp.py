@@ -133,7 +133,7 @@ class MultiLayerPerceptron:
 
 # print(dump_ast(AutoDiffMLP["main"]))
 
-AutoDiffMLP = relax.transform.SimpleAD(MultiLayerPerceptron.get_global_var("main"), require_grads=[1, 2, 3, 4])(MultiLayerPerceptron)
+AutoDiffMLP = relax.transform.Gradient(MultiLayerPerceptron.get_global_var("main"), require_grads=[1, 2, 3, 4])(MultiLayerPerceptron)
 AutoDiffMLP.show()
 # assert_structural_equal(AutoDiffMLP["main_adjoint"], Expected["main_adjoint"])
 TIRModule = LowerToTensorIRPass()(AutoDiffMLP)

@@ -43,8 +43,9 @@ def conv2d_adj(input, weight, output, output_adj, input_adj, weight_adj):
 		pad_tmp_adj[n, i, h1 + k1, w1 + k2] += output_adj[n, o, h1, w1] * weight[o, i, k1, k2]
 	# init input_adj
 	for n, c, h, w in grid(N, C, H + P * 2, W + P * 2):
-		if h >= P and h < H + P and w >= P and w < W + P:
-			input_adj[n, c, h - P, w - P] += pad_tmp_adj[n, c, h, w]
+		# if h >= P and h < H + P and w >= P and w < W + P:
+		# 	input_adj[n, c, h - P, w - P] += pad_tmp_adj[n, c, h, w]
+		input_adj[n, c, h - P, w - P] += pad_tmp_adj[n, c, h, w] if h >= P and h < H + P and w >= P and w < W + P else 0
 
 
 

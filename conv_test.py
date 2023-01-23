@@ -3,7 +3,7 @@ import tvm
 from tvm import relax
 from tvm.error import DiagnosticError
 from tvm.relax.transform import OperatorLegalizer
-from tvm.script._parser import ir as I, relax as R, tir as T
+from tvm.script.parser import ir as I, relax as R, tir as T
 import tvm.testing
 
 import itertools
