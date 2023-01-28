@@ -30,13 +30,12 @@ mod = builder.get()
 # AD process, differentiate "main" and generate a new function "main_adjoint"
 mod = relax.transform.Gradient(mod.get_global_var("main"), x)(mod)
 
-# Optimizer function generation
-# Note that `opt.state` would be used later to get the state of the optimizer
-opt = relax.optimizer.SGD(x, 0.1)
-mod["SGD"] = opt.get_function()
-
 # Show the complete IRModule
 mod.show()
+
+# Optimizer function generation
+# Note that `opt.state` would be used later to get the state of the optimizer
+opt = relax.optimizer.SGD(x, 0.1).set_vm_config("llvm", tvm.cpu())
 
 # Build and legalize module
 lowered_mod = LegalizeOps()(mod)
@@ -52,7 +51,7 @@ y_input = tvm.nd.array(np.zeros((3, 3), "float32"))
 steps = 100
 for i in range(steps):
     res, x_grad = vm["main_adjoint"](*x_input_tuple, y_input)
-    x_input_tuple, opt.state = vm["SGD"](x_input_tuple, x_grad, opt.state)
+    x_input_tuple = opt(x_input_tuple, x_grad)
     print("Step:", i)
     print("loss =", res.numpy())
     print("x =", x_input_tuple[0].numpy(), "\n")
