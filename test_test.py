@@ -2,6 +2,7 @@ import numpy as np
 import numpy.random
 import pytest
 import tvm
+from tvm._ffi.base import TVMError
 import tvm.script
 import tvm.testing
 from tvm import relax
@@ -21,19 +22,34 @@ from tvm.script.parser import tir as T
 from tvm.tir.expr import IntImm
 from tvm.topi.nn.utils import get_pad_tuple
 
-# @tvm.script.ir_module
-# class NLLLoss:
-#     @R.function
-#     def main(
-#         grad: R.Tensor((3, 2, 8, 8), dtype="float32"),
-#         x: R.Tensor((3, 2, 10, 10), dtype="float32"),
-#     ):
-#         gv = R.nn.max_pool2d(x, (3, 3))
-#         gv1 = R.max_pool2d_backward(grad, x, (3, 3))
-#         return gv, gv1
+
+
+@tvm.script.ir_module
+class NormalModule:
+    @R.function
+    def main(x0: R.Tensor((3, 3), "float32"), x1: R.Tensor((3, 3), "float32")):
+        with R.dataflow():
+            gv = R.sum(x0)
+            R.output(gv)
+        return gv
+
+    @T.prim_func
+    def sum(
+        rxplaceholder: T.Buffer[(T.int64(3), T.int64(3)), "float32"],
+        rxplaceholder_red: T.Buffer[(), "float32"],
+    ):
+        T.func_attr({"tir.noalias": True})
+        for k0, k1 in T.grid(T.int64(3), T.int64(3)):
+            with T.block("rxplaceholder_red"):
+                v_k0, v_k1 = T.axis.remap("RR", [k0, k1])
+                T.reads(rxplaceholder[v_k0, v_k1])
+                T.writes(rxplaceholder_red[()])
+                with T.init():
+                    rxplaceholder_red[()] = T.float32(0)
+                rxplaceholder_red[()] = (rxplaceholder_red[()] + rxplaceholder[v_k0, v_k1])
 
 # # NLLLoss.show()
-# lowered_mod = LegalizeOps()(NLLLoss)
+# lowered_mod = LegalizeOps()(NormalModule)
 # lowered_mod.show()
 # ex = relax.vm.build(lowered_mod, target="llvm")
 # vm = relax.VirtualMachine(ex, tvm.cpu())
@@ -46,7 +62,3 @@ from tvm.topi.nn.utils import get_pad_tuple
 # # print(res.numpy())
 # print("res:\n",res[0].numpy())
 # print("grad res:\n", res[1].numpy())
-
-print(get_pad_tuple(3, (tir.Var("a", "int64"), tir.Var("b", "int64"))))
-
-import torch.nn.modules.linear
