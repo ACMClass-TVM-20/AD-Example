@@ -4,7 +4,6 @@ import pytest
 import tvm
 from tvm._ffi.base import TVMError
 from tvm.arith.analyzer import Analyzer
-from tvm.relax.transform.transform import ToMixedPrecision
 import tvm.script
 import tvm.testing
 from tvm import relax
@@ -22,25 +21,33 @@ from tvm.runtime.container import tuple_object
 from tvm.script.parser import ir as I
 from tvm.script.parser import relax as R
 from tvm.script.parser import tir as T
-from tvm.tir.expr import IntImm
-from tvm.topi.nn.utils import get_pad_tuple
-
-from tvm.relay.op import tile
+from tvm.tir.function import PrimFunc
 
 
-@I.ir_module
-class Repeat:
+c1 = R.const(np.zeros(3).astype(np.float32))
+c2 = R.const(np.zeros(3).astype(np.float32))
+c3 = R.const(np.zeros(3).astype(np.float32))
+
+@tvm.script.ir_module
+class Before:
     @R.function
-    def main(x: R.Tensor((3, 2, 4), "float32")):
-        gv = R.reshape(x, (-1, 0, 2)) # 6, 2, 2
-        return gv
-# NLLLoss.show()
-lowered_mod = LegalizeOps()(Repeat)
-lowered_mod.show()
-ex = relax.vm.build(lowered_mod, target="llvm")
+    def main(x: R.Tensor((3,), "float32")):
+        # block 0
+        with R.dataflow():
+            gv = x
+            R.output(gv)
+        return (gv, gv)
+print(Before.attrs)
+# assert_structural_equal(Expected, After)
+# old_f = Module["main"]
+# new_f = relax.utils.copy_with_new_vars(old_f)
+# print(new_f)
+lowered_mod = LegalizeOps()(Before)
+lowered_mod.show(None, False)
+ex = relax.build(lowered_mod, target="llvm")
 vm = relax.VirtualMachine(ex, tvm.cpu())
-u_in = tvm.nd.array(np.array(range(3 * 2 * 4)).reshape(3, 2, 4).astype(np.float32))
+u_in = tvm.nd.array(numpy.zeros((3,)).astype(np.float32))
 # x_in = tvm.nd.array(numpy.random.rand(3, 4, 3, 3).astype(np.float32))
 print(u_in.numpy())
 res = vm["main"](u_in)
-print(res.numpy())
+# print(res.numpy())
