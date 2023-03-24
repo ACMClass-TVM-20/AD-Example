@@ -1,4 +1,5 @@
 from typing import Callable, List, Tuple
+from time import monotonic
 import numpy as np
 import numpy.random
 import pytest
@@ -41,7 +42,8 @@ import torch.nn.functional as F
 from torch import fx
 import numpy.random
 
-dtype = "float64"
+fdtype = "float32"
+batch = 32
 
 
 class TrainerContext():
@@ -90,41 +92,41 @@ def get_np_shape(expr):
 
 
 def Conv2d(ctx: TrainerContext, input, in_channel, out_channel, kernel_size, stride, padding=0):
-    weight = relax.Var("conv2d_weight", R.Tensor((out_channel, in_channel, kernel_size, kernel_size), dtype))
+    weight = relax.Var("conv2d_weight", R.Tensor((out_channel, in_channel, kernel_size, kernel_size), fdtype))
 
     # kaiming init
     bound = 1.0 / np.sqrt(in_channel * kernel_size * kernel_size)
-    ctx.add_param(weight, numpy.random.uniform(-bound, bound, size=get_np_shape(weight)).astype(dtype))
+    ctx.add_param(weight, numpy.random.uniform(-bound, bound, size=get_np_shape(weight)).astype(fdtype))
 
     res = ctx.emit(R.nn.conv2d(input, weight, stride, padding))
     return res
 
 
 def BatchNorm2d(ctx: TrainerContext, input, channel):
-    gamma = relax.Var("bn_gamma", R.Tensor((channel,), dtype))
-    beta = relax.Var("bn_beta", R.Tensor((channel,), dtype))
-    moving_mean = relax.Var("bn_mm", R.Tensor((channel,), dtype))
-    moving_var = relax.Var("bn_mv", R.Tensor((channel,), dtype))
+    gamma = relax.Var("bn_gamma", R.Tensor((channel,), fdtype))
+    beta = relax.Var("bn_beta", R.Tensor((channel,), fdtype))
+    moving_mean = relax.Var("bn_mm", R.Tensor((channel,), fdtype))
+    moving_var = relax.Var("bn_mv", R.Tensor((channel,), fdtype))
 
-    ctx.add_param(gamma, np.ones(get_np_shape(gamma)).astype(dtype))
-    ctx.add_param(beta, np.zeros(get_np_shape(beta)).astype(dtype))
+    ctx.add_param(gamma, np.ones(get_np_shape(gamma)).astype(fdtype))
+    ctx.add_param(beta, np.zeros(get_np_shape(beta)).astype(fdtype))
 
     bn = ctx.emit(R.nn.batch_norm(input, gamma, beta, moving_mean, moving_var))
     res, new_moving_mean, new_moving_var = ctx.emit(bn[0]), ctx.emit(bn[1]), ctx.emit(bn[2])
 
-    ctx.add_state(moving_mean, new_moving_mean, np.zeros(get_np_shape(moving_mean)).astype(dtype))
-    ctx.add_state(moving_var, new_moving_var, np.ones(get_np_shape(moving_mean)).astype(dtype))
+    ctx.add_state(moving_mean, new_moving_mean, np.zeros(get_np_shape(moving_mean), fdtype))
+    ctx.add_state(moving_var, new_moving_var, np.ones(get_np_shape(moving_mean), fdtype))
 
     return res
 
 
 def Linear(ctx: TrainerContext, input, in_feature, out_feature):
-    weight = relax.Var("ln_weight", R.Tensor((in_feature, out_feature), dtype))
-    bias = relax.Var("ln_bias", R.Tensor((out_feature,), dtype))
+    weight = relax.Var("ln_weight", R.Tensor((in_feature, out_feature), fdtype))
+    bias = relax.Var("ln_bias", R.Tensor((out_feature,), fdtype))
 
     bound = 1.0 / np.sqrt(in_feature)
-    ctx.add_param(weight, numpy.random.uniform(-bound, bound, size=(get_np_shape(weight))))
-    ctx.add_param(bias, numpy.random.uniform(-bound, bound, size=(get_np_shape(bias))))
+    ctx.add_param(weight, numpy.random.uniform(-bound, bound, size=get_np_shape(weight)).astype(fdtype))
+    ctx.add_param(bias, numpy.random.uniform(-bound, bound, size=(get_np_shape(bias))).astype(fdtype))
 
     res = ctx.emit(R.matmul(input, weight) + bias)
     return res
@@ -178,7 +180,7 @@ def ResNet18(ctx: TrainerContext, input):
 
 bb = BlockBuilder()
 ctx = TrainerContext(bb)
-input = relax.Var("input", R.Tensor((1, 3, 32, 32), "float64"))
+input = relax.Var("input", R.Tensor((batch, 3, 32, 32), fdtype))
 input_list = [input]
 
 with bb.function("predict"):
@@ -190,11 +192,10 @@ with bb.function("predict"):
 Backbone = bb.get()
 Backbone = Backbone.with_attrs(ctx.mod_attrs())
 
-Backbone.show()
+# Backbone.show()
 
-out_sinfo = relax.TensorStructInfo((1, 10), "float64")
-label_sinfo = relax.TensorStructInfo((1,), "int64")
-
+out_sinfo = relax.TensorStructInfo((batch, 10), fdtype)
+label_sinfo = relax.TensorStructInfo((batch,), "int64")
 
 setup_trainer = training.SetupTrainer(
     training.loss.CrossEntropyLoss(),
@@ -203,15 +204,142 @@ setup_trainer = training.SetupTrainer(
 )
 
 train_mod = setup_trainer(Backbone)
+print(train_mod.without_attr("optim_state").script())
 
 trainer = training.Trainer(train_mod)
-trainer.build(target="llvm")
+trainer.build(target="llvm --num-cores=12", profile=True)
 trainer.load_params(ctx.p_default)
 trainer.load_states(ctx.s_default)
-input = numpy.random.randint(0, 5, (1, 3, 32, 32)).astype(dtype)
-# label = numpy.random.rand()
-res1 = trainer.predict(input)
-print(res1)
-# res2 = trainer.update_params([input], [label])
 
-# print(res2)
+param_cnt = 0
+for i in ctx.p_default:
+    param_cnt += i.size
+
+state_cnt = 0
+for i in ctx.s_default:
+    state_cnt += i.size
+
+print("sizes:", param_cnt, state_cnt)
+
+input = np.ones((batch, 3, 32, 32)).astype(fdtype)
+label = np.zeros((batch,)).astype("int64")
+# start_time = monotonic()
+
+# res1 = trainer.predict(input)
+
+# print(f"Run time {monotonic() - start_time} seconds")
+
+# print(res1)
+
+start_time = monotonic()
+
+res2 = trainer.update_params([input], [label])
+
+print(f"Run time {monotonic() - start_time} seconds")
+
+print(res2.table())
+
+# '''Train CIFAR10 with PyTorch.'''
+# import torch
+# import torch.nn as nn
+# import torch.optim as optim
+# import torch.nn.functional as F
+# import torch.backends.cudnn as cudnn
+
+# import torchvision
+# import torchvision.transforms as transforms
+# print('==> Preparing data..')
+# transform_train = transforms.Compose([
+#     transforms.RandomCrop(32, padding=4),
+#     transforms.RandomHorizontalFlip(),
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+
+# transform_test = transforms.Compose([
+#     transforms.ToTensor(),
+#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+# ])
+
+# trainset = torchvision.datasets.CIFAR10(
+#     root='./data', train=True, download=True, transform=transform_train)
+# trainloader = torch.utils.data.DataLoader(
+#     trainset, batch_size=128, shuffle=True, num_workers=2)
+
+# testset = torchvision.datasets.CIFAR10(
+#     root='./data', train=False, download=True, transform=transform_test)
+# testloader = torch.utils.data.DataLoader(
+#     testset, batch_size=128, shuffle=False, num_workers=2)
+
+# classes = ('plane', 'car', 'bird', 'cat', 'deer',
+#            'dog', 'frog', 'horse', 'ship', 'truck')
+# # Training
+# def train(epoch):
+#     print('\nEpoch: %d' % epoch)
+#     train_loss = 0
+#     correct = 0
+#     total = 0
+#     for batch_idx, (inputs, targets) in enumerate(trainloader):
+#         # import datetime
+#         start_time = monotonic()
+
+#         loss = trainer.update_params([inputs.numpy()], [targets.numpy()]).numpy()
+#         outputs = trainer.predict(inputs.numpy()).numpy()
+
+#         print(f"Run time {monotonic() - start_time} seconds")
+
+#         train_loss += loss.item()
+#         predicted = outputs.max(1)
+#         total += targets.size(0)
+#         correct += np.equal(predicted, targets).sum().item()
+
+#         print(batch_idx, "/", len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+#                      % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+
+# def test(epoch):
+#     global best_acc
+#     net.eval()
+#     test_loss = 0
+#     correct = 0
+#     total = 0
+#     with torch.no_grad():
+#         for batch_idx, (inputs, targets) in enumerate(testloader):
+#             inputs, targets = inputs.to(device), targets.to(device)
+#             outputs = net(inputs)
+#             loss = criterion(outputs, targets)
+
+#             test_loss += loss.item()
+#             _, predicted = outputs.max(1)
+#             total += targets.size(0)
+#             correct += predicted.eq(targets).sum().item()
+
+#             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+#                          % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+#     # Save checkpoint.
+#     acc = 100.*correct/total
+#     if acc > best_acc:
+#         print('Saving..')
+#         state = {
+#             'net': net.state_dict(),
+#             'acc': acc,
+#             'epoch': epoch,
+#         }
+#         if not os.path.isdir('checkpoint'):
+#             os.mkdir('checkpoint')
+#         torch.save(state, './checkpoint/ckpt.pth')
+#         best_acc = acc
+
+# train(0)
+
+# # import datetime
+# # s = datetime.datetime.now()
+
+# # for epoch in range(0, 200):
+# #     train(epoch)
+# #     test(epoch)
+# #     scheduler.step()
+
+# # e = datetime.datetime.now()
+# # print ((e - s).microseconds/10**6, 's')

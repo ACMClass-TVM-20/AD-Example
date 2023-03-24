@@ -1,3 +1,6 @@
 .pkl_memoize_py3
 __pycache__
-data
+/data/
+/tmp/
+/training/data/
+output.prof
