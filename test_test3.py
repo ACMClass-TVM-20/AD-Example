@@ -27,6 +27,9 @@ from tvm.tir.function import PrimFunc
 from tvm.relax import training
 from tvm.relax.frontend.torch import from_fx
 
+from tvm.relax.transform.tuning_api import Trace
+from tvm.meta_schedule.relax_integration import tune_relax
+import tvm.script
 
 '''ResNet in PyTorch.
 
@@ -84,7 +87,7 @@ class TrainerContext():
         return self.param_list + self.state_list
 
     def mod_attrs(self):
-        return {"params_num": len(self.param_list), "states_num": len(self.state_list)}
+        return {"param_num": len(self.param_list), "state_num": len(self.state_list)}
 
 
 def get_np_shape(expr):
@@ -183,7 +186,7 @@ ctx = TrainerContext(bb)
 input = relax.Var("input", R.Tensor((batch, 3, 32, 32), fdtype))
 input_list = [input]
 
-with bb.function("predict"):
+with bb.function("backbone"):
     with bb.dataflow():
         result = ResNet18(ctx, input)
         ret = ctx.emit_output_list([result] + ctx.updated_state_list)
@@ -204,142 +207,52 @@ setup_trainer = training.SetupTrainer(
 )
 
 train_mod = setup_trainer(Backbone)
-print(train_mod.without_attr("optim_state").script())
+# print(train_mod.without_attr("optim_state").script())
 
-trainer = training.Trainer(train_mod)
-trainer.build(target="llvm --num-cores=12", profile=True)
+target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
+# target, dev = "llvm", tvm.cpu()
+
+
+# with tempfile.TemporaryDirectory() as work_dir:
+work_dir = "/home/yxdong/relax-mlcai/other-repos/AD-Example/tmp/tune"
+with target, tvm.transform.PassContext(trace=Trace(train_mod)):
+    start_time = monotonic()
+
+    tune_relax(train_mod, {}, target, work_dir, 10000)
+
+    print(f"Tune time {monotonic() - start_time} seconds")
+
+    start_time = monotonic()
+
+    tuned_mod = relax.transform.MetaScheduleApplyDatabase(work_dir)(train_mod)
+
+    print(f"ApplyDB time {monotonic() - start_time} seconds")
+
+
+ex = relax.build(tuned_mod, target)
+vm = relax.VirtualMachine(ex, dev)
+
+
+trainer = training.Trainer(train_mod, vm, dev)
 trainer.load_params(ctx.p_default)
 trainer.load_states(ctx.s_default)
 
-param_cnt = 0
-for i in ctx.p_default:
-    param_cnt += i.size
-
-state_cnt = 0
-for i in ctx.s_default:
-    state_cnt += i.size
-
-print("sizes:", param_cnt, state_cnt)
-
 input = np.ones((batch, 3, 32, 32)).astype(fdtype)
 label = np.zeros((batch,)).astype("int64")
-# start_time = monotonic()
-
-# res1 = trainer.predict(input)
-
-# print(f"Run time {monotonic() - start_time} seconds")
-
-# print(res1)
-
 start_time = monotonic()
 
-res2 = trainer.update_params([input], [label])
+res1 = trainer.predict(input)
 
 print(f"Run time {monotonic() - start_time} seconds")
 
-print(res2.table())
+print(res1)
 
-# '''Train CIFAR10 with PyTorch.'''
-# import torch
-# import torch.nn as nn
-# import torch.optim as optim
-# import torch.nn.functional as F
-# import torch.backends.cudnn as cudnn
+start_time = monotonic()
 
-# import torchvision
-# import torchvision.transforms as transforms
-# print('==> Preparing data..')
-# transform_train = transforms.Compose([
-#     transforms.RandomCrop(32, padding=4),
-#     transforms.RandomHorizontalFlip(),
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-# ])
+res2 = trainer.update([input], [label])
 
-# transform_test = transforms.Compose([
-#     transforms.ToTensor(),
-#     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-# ])
+print(f"Run time {monotonic() - start_time} seconds")
 
-# trainset = torchvision.datasets.CIFAR10(
-#     root='./data', train=True, download=True, transform=transform_train)
-# trainloader = torch.utils.data.DataLoader(
-#     trainset, batch_size=128, shuffle=True, num_workers=2)
+print(res2)
 
-# testset = torchvision.datasets.CIFAR10(
-#     root='./data', train=False, download=True, transform=transform_test)
-# testloader = torch.utils.data.DataLoader(
-#     testset, batch_size=128, shuffle=False, num_workers=2)
-
-# classes = ('plane', 'car', 'bird', 'cat', 'deer',
-#            'dog', 'frog', 'horse', 'ship', 'truck')
-# # Training
-# def train(epoch):
-#     print('\nEpoch: %d' % epoch)
-#     train_loss = 0
-#     correct = 0
-#     total = 0
-#     for batch_idx, (inputs, targets) in enumerate(trainloader):
-#         # import datetime
-#         start_time = monotonic()
-
-#         loss = trainer.update_params([inputs.numpy()], [targets.numpy()]).numpy()
-#         outputs = trainer.predict(inputs.numpy()).numpy()
-
-#         print(f"Run time {monotonic() - start_time} seconds")
-
-#         train_loss += loss.item()
-#         predicted = outputs.max(1)
-#         total += targets.size(0)
-#         correct += np.equal(predicted, targets).sum().item()
-
-#         print(batch_idx, "/", len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-#                      % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
-
-
-# def test(epoch):
-#     global best_acc
-#     net.eval()
-#     test_loss = 0
-#     correct = 0
-#     total = 0
-#     with torch.no_grad():
-#         for batch_idx, (inputs, targets) in enumerate(testloader):
-#             inputs, targets = inputs.to(device), targets.to(device)
-#             outputs = net(inputs)
-#             loss = criterion(outputs, targets)
-
-#             test_loss += loss.item()
-#             _, predicted = outputs.max(1)
-#             total += targets.size(0)
-#             correct += predicted.eq(targets).sum().item()
-
-#             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-#                          % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
-
-#     # Save checkpoint.
-#     acc = 100.*correct/total
-#     if acc > best_acc:
-#         print('Saving..')
-#         state = {
-#             'net': net.state_dict(),
-#             'acc': acc,
-#             'epoch': epoch,
-#         }
-#         if not os.path.isdir('checkpoint'):
-#             os.mkdir('checkpoint')
-#         torch.save(state, './checkpoint/ckpt.pth')
-#         best_acc = acc
-
-# train(0)
-
-# # import datetime
-# # s = datetime.datetime.now()
-
-# # for epoch in range(0, 200):
-# #     train(epoch)
-# #     test(epoch)
-# #     scheduler.step()
-
-# # e = datetime.datetime.now()
-# # print ((e - s).microseconds/10**6, 's')
+# for epoch in range(10)
