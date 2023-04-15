@@ -1,13 +1,9 @@
-import tempfile
 import tvm
 from tvm import relax
 from tvm._ffi.registry import get_global_func
-from tvm._ffi.runtime_ctypes import Device
 from tvm.meta_schedule.relax_integration import tune_relax
-from tvm.meta_schedule.runner.local_runner import default_alloc_argument
 from tvm.meta_schedule.runner.runner import Runner
 from tvm.meta_schedule.runner.utils import alloc_argument_common
-from tvm.meta_schedule.utils import get_global_func_with_default_on_worker
 from tvm.runtime.ndarray import NDArray
 from tvm.script.parser import relax as R
 from tvm.relax.transform.tuning_api import Trace
