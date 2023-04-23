@@ -4,3 +4,4 @@ __pycache__
 /tmp/
 /training/data/
 output.prof
+exec.so
