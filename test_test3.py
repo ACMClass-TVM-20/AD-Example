@@ -22,7 +22,7 @@ from tvm.relax.transform.tuning_api import Trace
 fdtype = "float32"
 batch = 32
 lr = 0.1
-load_module = True
+load_module = False
 
 # CPU Training
 # CPU training does not require the tuning process.
@@ -39,6 +39,7 @@ class TrainerContext:
 
     These contents help to build the backbone module later.
     """
+
     param_list: List[Var]
     p_default: List[np.ndarray]
     state_list: List[Var]
@@ -73,9 +74,7 @@ def get_np_shape(expr):
 
 
 # Model definition using TrainerContext
-def Conv2d(
-    input, in_channel, out_channel, kernel_size, stride, padding=0
-):
+def Conv2d(input, in_channel, out_channel, kernel_size, stride, padding=0):
     bb = relax.BlockBuilder.current()
 
     weight = relax.Var(
@@ -105,7 +104,7 @@ def BatchNorm2d(input, channel):
     bb.ctx.add_param(gamma, np.ones(get_np_shape(gamma)).astype(fdtype))
     bb.ctx.add_param(beta, np.zeros(get_np_shape(beta)).astype(fdtype))
 
-    bn = bb.emit(R.nn.batch_norm(input, gamma, beta, moving_mean, moving_var))
+    bn = bb.emit(R.nn.batch_norm(input, gamma, beta, moving_mean, moving_var, axis=1))
     res, new_moving_mean, new_moving_var = bb.emit(bn[0]), bb.emit(bn[1]), bb.emit(bn[2])
 
     bb.ctx.add_state(moving_mean, new_moving_mean, np.zeros(get_np_shape(moving_mean), fdtype))
@@ -229,9 +228,7 @@ if load_module:
 else:
     # Tune utils definition
     def random_fill(data: NDArray):
-        random_fill_for_measure = get_global_func(
-            "tvm.contrib.random.random_fill_for_measure"
-        )
+        random_fill_for_measure = get_global_func("tvm.contrib.random.random_fill_for_measure")
         if "int" in data.dtype:
             new_data = np.zeros(data.shape, dtype=data.dtype)
             data.copyfrom(new_data)
@@ -249,11 +246,12 @@ else:
     work_dir = "./tmp/tune"
     with target, tvm.transform.PassContext(trace=Trace(train_mod)):
         # start_time = monotonic()
-        # tune_relax(train_mod, {}, target, work_dir, 10000, runner=runner)
-        # print(f"Tune time {monotonic() - start_time} seconds")
+        tune_relax(train_mod, {}, target, work_dir, 10000, runner=runner)
+        print(f"Tune time {monotonic() - start_time} seconds")
 
         start_time = monotonic()
         tuned_mod = relax.transform.MetaScheduleApplyDatabase(work_dir)(train_mod)
+        tuned_mod.without_attr("optim_state").show(None, False)
         print(f"ApplyDB time {monotonic() - start_time} seconds")
 
     # Build the module
@@ -357,9 +355,7 @@ def train(epoch):
         loss = trainer.update(inputs.numpy(), targets.numpy())
         # print(f"Train step time: {monotonic() - start_time1} seconds")
 
-    print(
-        f"Train: Epoch = {epoch}, run time {monotonic() - start_time} seconds, final loss={loss}"
-    )
+    print(f"Train: Epoch = {epoch}, run time {monotonic() - start_time} seconds, final loss={loss}")
 
 
 # Testing function

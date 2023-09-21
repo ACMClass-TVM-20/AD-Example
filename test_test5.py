@@ -1,80 +1,68 @@
 import tvm
-from tvm import relax
-from tvm._ffi.registry import get_global_func
-from tvm.meta_schedule.runner.runner import Runner
-from tvm.meta_schedule.runner.utils import alloc_argument_common
-from tvm.runtime.ndarray import NDArray
-from tvm import te, topi, meta_schedule as ms
+from tvm import relax, tir, te, topi
+from tvm.ir.module import IRModule
+from tvm.relax.analysis import estimate_memory_usage
+from tvm.relax.block_builder import BlockBuilder
+from tvm.relay import GlobalVar
+from tvm.target.target import Target
+import tvm.testing
+from tvm.script.parser import relax as R, tir as T, ir as I
+import pytest
 import numpy as np
-from tvm.script import tir as T, ir as I
-from tvm.tir import Schedule
-# @tvm.script.ir_module
-# class InputModule:
-#     @R.function
-#     def main(
-#         x: R.Tensor((1, 1, 16, 16), "float32"), y: R.Tensor((1, 1, 3, 3), "float32")
-#     ):
-#         with R.dataflow():
-#             z1 = R.full((3, 3), )
-#             R.output(z1)
-#         return z1
+
+from tvm.relax.transform.tuning_api import Trace
+from tvm.tir.schedule.schedule import Schedule
+
+from tvm.relax.dpl.pattern import is_op, wildcard
+
+
+bb = relax.BlockBuilder()
+dtype = "float32"
+x = relax.Var("x", R.Tensor((1, 2, 5, 5), dtype))
+w = relax.Var("w", R.Tensor((2, 2, 1, 1), dtype))
+
+
+@I.ir_module
+class mod:
+    @R.function
+    def func(x: R.Tensor((3, 3), "float32")):
+        x = x + R.const(1, "float32")
+        x = x + R.const(1, "float32")
+        return x
+
+# mod = bb.get()
+mod.show(None, False)
+
+# mod = relax.transform.Gradient("main")(mod)
+# mod.show(None, False)
+# mod = relax.transform.LegalizeOps()(mod)
+# mod = relax.get_pipeline()(mod)
+# mod.show(None, False)
+# # assert relax.analysis.well_formed(mod)
 
 # target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
-
-# mod = relax.transform.LegalizeOps()(InputModule)
-# mod.show(None, False)
-# with target:
-#     mod = tvm.tir.transform.DefaultGPUSchedule()(mod)
-# mod.show(None, False)
-
-
-@tvm.script.ir_module
-class mod:
-    @T.prim_func
-    def main(T_full: T.Buffer((), "float32")):
-        # with T.block("root"):
-        with T.block("T_full"):
-            vi = T.axis.spatial(1, 0)
-            T.reads()
-            T.writes(T_full[()])
-            T_full[()] = T.float32(1)
-sch = Schedule(mod)
-
-sch = ms.schedule_rule.InlineConstantScalars().apply(sch, sch.get_block("T_full"))[0]
-sch.mod.show()
-
-
-# ex = relax.build(mod, target)
-# vm = relax.VirtualMachine(ex, dev)
-# inputs = [np.zeros((1, 1, 16, 16), "float32"), np.zeros((1, 1, 3, 3), "float32")]
-# res = vm["main"](tvm.nd.array(inputs[0], dev), tvm.nd.array(inputs[1], dev))
-# print(res)
-
-# work_dir = "/home/yxdong/relax-mlcai/other-repos/AD-Example/tmp/tune1"
-# def random_fill(data: NDArray):
-#     random_fill_for_measure = get_global_func("tvm.contrib.random.random_fill_for_measure")
-#     if 'int' in data.dtype:
-#         new_data = np.zeros(data.shape, dtype=data.dtype)
-#         data.copyfrom(new_data)
-#     else:
-#         random_fill_for_measure(data)
-
-# def alloc_argument(device, args_info, alloc_repeat):
-#     return alloc_argument_common(random_fill, device, args_info, alloc_repeat)
-
-# runner = Runner.create("local", f_alloc_argument=alloc_argument)
-
-# tune_relax(mod, {}, target, work_dir, 80, runner=runner)
-# # tune_relax(mod, {}, target, work_dir, 80)
+# work_dir = "/home/yxdong/relax-mlcai/other-repos/AD-Example/tmp/tune"
 # # with tempfile.TemporaryDirectory() as work_dir:
 # with target, tvm.transform.PassContext(trace=Trace(mod)):
-#     mod_new = tvm.transform.Sequential(
+#     mod = tvm.transform.Sequential(
 #         [
-#             # relax.transform.MetaScheduleTuneIRMod(
-#             #     params={}, work_dir=work_dir, max_trials_global=80
-#             # ),
+#             relax.transform.MetaScheduleTuneIRMod(
+#                 params={}, work_dir=work_dir, max_trials_global=8
+#             ),
 #             relax.transform.MetaScheduleApplyDatabase(work_dir),
 #         ]
 #     )(mod)
-# assert relax.analysis.well_formed(mod_new)
-# mod_new.without_attr("external_mods").show()
+# assert relax.analysis.well_formed(mod)
+# mod.show(None, False)
+
+# with target, tvm.transform.PassContext(trace=Trace(mod)):
+#     mod = tvm.tir.transform.DefaultGPUSchedule()(mod)
+# mod.show()
+# target, dev = "llvm", tvm.cpu()
+# ex = relax.build(mod, target)
+# vm = relax.VirtualMachine(ex, dev)
+# input = tvm.nd.array(np.zeros((2, 2)).astype(np.float64), dev)
+# # input1 = tvm.nd.array(np.zeros(()).astype(np.float64), dev)
+
+# res = vm["backbone"](input)
+# print(res.numpy().__repr__(), type(res))
