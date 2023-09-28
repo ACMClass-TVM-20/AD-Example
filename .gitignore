@@ -5,3 +5,6 @@ __pycache__
 /training/data/
 output.prof
 exec.so
+*.so
+*.o
+*.cubin

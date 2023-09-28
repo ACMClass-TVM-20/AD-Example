@@ -105,7 +105,7 @@ mod.show(None, False)
 
 # target, dev = "llvm", tvm.cpu()
 # target, dev = tvm.target.Target("apple/m1-gpu-restricted"), tvm.metal()
-# target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
+target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
 # work_dir = "/home/yxdong/relax-mlcai/other-repos/AD-Example/tmp/tune"
 # # with tempfile.TemporaryDirectory() as work_dir:
 # with target, tvm.transform.PassContext(trace=Trace(mod)):
@@ -120,20 +120,20 @@ mod.show(None, False)
 # assert relax.analysis.well_formed(mod)
 # mod.show(None, False)
 
-# with target, tvm.transform.PassContext(trace=Trace(mod)):
-#     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GeneralReduction())(mod)
-#     mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.Fallback())(mod)
+with target, tvm.transform.PassContext(trace=Trace(mod)):
+    #     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GeneralReduction())(mod)
+    mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.Fallback())(mod)
 #     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GEMV())(mod)
-# mod.show()
+mod.show()
 # mod_deploy.show(None, False)
 
 # target, dev = "llvm", tvm.cpu()
-# ex = relax.build(mod, target)
-# vm = relax.VirtualMachine(ex, dev)
+ex = relax.build(mod, target)
+vm = relax.VirtualMachine(ex, dev)
 # vm["func"]
-# inputs = [np.random.rand(5, 30000).astype(np.float16), np.random.rand(30000, 5).astype(np.float16)]
+inputs = [np.random.rand(3, 3).astype(np.float32), np.random.rand(3, 3).astype(np.float32)]
 
-# res = vm["main"](*[tvm.nd.array(x, dev) for x in inputs])
+res = vm["main"](*[tvm.nd.array(x, dev) for x in inputs])
 # print(res.numpy())
 # res_np = inputs[0] @ inputs[1]
 # print(res_np, res_np.dtype)
