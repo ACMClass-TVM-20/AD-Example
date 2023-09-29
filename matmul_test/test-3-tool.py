@@ -24,10 +24,10 @@ import tvm.dlight as dl
 reload = False
 # problematic
 # b=1, m=256, k=1024, n=6400
-batch = 1
-shape_m = 128
+batch = 4
+shape_m = 512
 shape_k = 4096
-shape_n = 4096
+shape_n = 11008
 
 
 if len(sys.argv) > 1:
@@ -133,7 +133,8 @@ tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
 ex(tvm_inputs[1], tvm_inputs[0], tvm_inputs[2])
 torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
 torch_res = torch_inputs[0] @ torch_inputs[1].T
-assert np.allclose(torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=atol, rtol=rtol)
+assert np.allclose(torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=1e-3, rtol=1e-3)
+# assert np.allclose(torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=atol, rtol=rtol)
 print("<correctness check done>")
 
 # Step 2. check performance
