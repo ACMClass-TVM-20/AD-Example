@@ -24,11 +24,10 @@ import tvm.dlight as dl
 reload = False
 # problematic
 # b=1, m=256, k=1024, n=6400
-batch = 4
+batch = 1
 shape_m = 512
-shape_k = 4096
-shape_n = 11008
-
+shape_k = 128
+shape_n = 4096
 
 if len(sys.argv) > 1:
     batch = int(sys.argv[1])
