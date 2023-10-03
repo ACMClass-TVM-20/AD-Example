@@ -1,10 +1,9 @@
-"""Test: fp16 matmul unroll
-- (6, 512, 4096, 4096), static, TFlops: 220.35211027782518
-    - cublas: 279.86
-- (6, 512, 4096, 11008), static, TFlops: 219.4391053218294
-    - cublas: 281.285
-- (6, 512, 11008, 4096), static, TFlops: 154.55989838411668
-    - cublas: 274.544
+"""Test: fp16 mixed precision matmul mma
+- Without unroll: 99.60745695626359
+    - 208 regs
+- With unroll: 144.07358026271964
+- With pipeline: 96.57410868904708
+    - 167 regs
 """
 import os
 import sys
@@ -28,7 +27,7 @@ from tvm.relax.dpl.pattern import is_op, wildcard
 import torch
 import tvm.dlight as dl
 
-reload = True
+reload = False
 batch, shape_m, shape_k, shape_n = 6, 512, 4096, 11008
 
 if len(sys.argv) > 1:
@@ -38,11 +37,11 @@ shape_1 = (batch, shape_m, shape_k)
 shape_2 = (shape_n, shape_k)
 shape_3 = (batch, shape_m, shape_n)
 dtype = "float16"
-fallback_dtype = "float16"
+fallback_dtype = "float32"
 atol = 1e-5
 rtol = 1e-5
 
-check_correctness, check_performance, check_register_usage = False, True, True
+check_correctness, check_performance, check_register_usage = True, True, True
 
 print(f"Running with dtype={dtype}, fallback_dtype={fallback_dtype}")
 print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
@@ -70,7 +69,8 @@ if not reload:
         def main(A: R.Tensor(shape_1, dtype), B: R.Tensor(shape_2, dtype)):
             with R.dataflow():
                 lv1 = R.permute_dims(B)
-                gv = R.matmul(A, lv1)
+                lv2 = R.matmul(A, lv1, out_dtype=fallback_dtype)
+                gv = R.astype(lv2, dtype)
                 R.output(gv)
             return gv
 
@@ -108,14 +108,14 @@ if not reload:
     print("<transform done>")
     if target.kind.name == "cuda":
         with target, tvm.transform.PassContext(trace=Trace(mod)):
-            mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulTensorization())(mod)
+            mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulTensorizationMMA())(mod)
             # mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.Matmul())(mod)
 
     print(mod.script(), file=open(after_path, "w"))
     print("<schedule done>")
 
     # build
-    func_name = "fused_relax_permute_dims_relax_matmul"
+    func_name = "fused_fused_relax_permute_dims_relax_matmul_cast"
     with tvm.transform.PassContext(config={"tir.use_async_copy": 1}):
         ex = tvm.build(mod[func_name], target=target)
     if target.kind.name == "cuda":
