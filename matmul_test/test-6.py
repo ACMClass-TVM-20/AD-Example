@@ -47,7 +47,8 @@ print(f"Running with dtype={dtype}, fallback_dtype={fallback_dtype}")
 print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
 
 # target, dev = tvm.target.Target("llvm"), tvm.cpu()
-target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
+# target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
+target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
 before_path = os.path.join(cur_path, "before.py")

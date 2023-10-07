@@ -1,4 +1,10 @@
-from tvm.contrib.nvcc import compile_cuda
 
-file_name = "/home/yxdong/llm/tvm-develop/other-repos/AD-Example/matmul_test/build.cu"
-compile_cuda(open(file_name, "r").read(), "cubin")
+def shared_16x16_to_ldmatrix_32x8_layout(i, j):
+    thread_id = 4 * (i % 8) + (j % 8) // 2
+    return thread_id, 4 * (j // 8) + (i // 8) * 2 + (j % 2)
+
+
+for i in range(16):
+    for j in range(16):
+        print(shared_16x16_to_ldmatrix_32x8_layout(i, j), end="\t")
+    print("")
