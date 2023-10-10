@@ -1,9 +1,4 @@
-"""Test: fp16 mixed precision matmul mma
-- Without unroll: 99.60745695626359
-    - 208 regs
-- With unroll: 144.07358026271964
-- With pipeline: 96.57410868904708
-    - 167 regs
+"""Test: fp16 mixed precision matmul mma, fp32 output
 """
 import os
 import sys
@@ -70,8 +65,7 @@ if not reload:
         def main(A: R.Tensor(shape_1, dtype), B: R.Tensor(shape_2, dtype)):
             with R.dataflow():
                 lv1 = R.permute_dims(B)
-                lv2 = R.matmul(A, lv1, out_dtype=fallback_dtype)
-                gv = R.astype(lv2, dtype)
+                gv = R.matmul(A, lv1, out_dtype=fallback_dtype)
                 R.output(gv)
             return gv
 
@@ -116,7 +110,7 @@ if not reload:
     print("<schedule done>")
 
     # build
-    func_name = "fused_fused_relax_permute_dims_relax_matmul_cast"
+    func_name = "fused_relax_permute_dims_relax_matmul"
     with tvm.transform.PassContext(config={"tir.use_async_copy": 1}):
         ex = tvm.build(mod[func_name], target=target)
     if target.kind.name == "cuda":
@@ -129,7 +123,7 @@ else:
 
 
 # generate inputs
-np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2, shape_3]]
+np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2]] + [np.random.normal(size=shape_3).astype(fallback_dtype)]
 torch_inputs = [torch.tensor(x).to("cuda") for x in np_inputs[:2]]
 tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
 
