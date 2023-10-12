@@ -34,15 +34,15 @@ import tvm.dlight as dl
 # mod = bb.get()
 
 
-@I.ir_module
-class mod:
-    @R.function
-    def main(input: R.Tensor((3, 3), "float32"), input1: R.Tensor((3, 3), "float32")):
-        with R.dataflow():
-            # gv = R.reshape(input, (9,))
-            gv = R.matmul(input, input1)
-            R.output(gv)
-        return gv
+# @I.ir_module
+# class mod:
+#     @R.function
+#     def main(input: R.Tensor((3, 3), "float32"), input1: R.Tensor((3, 3), "float32")):
+#         with R.dataflow():
+#             # gv = R.reshape(input, (9,))
+#             gv = R.matmul(input, input1)
+#             R.output(gv)
+#         return gv
 
     # @T.prim_func
     # def main(input: T.Buffer((), "int32"), output: T.Buffer((), "int32")):
@@ -98,14 +98,14 @@ class mod:
 #         return TestMutator(mod).transform()
 
 # mod = TestPass()(mod)
-mod = relax.transform.LegalizeOps()(mod)
+# mod = relax.transform.LegalizeOps()(mod)
 # mod = relax.get_pipeline()(mod)
-mod.show(None, False)
+# mod.show(None, False)
 # assert relax.analysis.well_formed(mod)
 
 # target, dev = "llvm", tvm.cpu()
 # target, dev = tvm.target.Target("apple/m1-gpu-restricted"), tvm.metal()
-target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
+# target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
 # work_dir = "/home/yxdong/relax-mlcai/other-repos/AD-Example/tmp/tune"
 # # with tempfile.TemporaryDirectory() as work_dir:
 # with target, tvm.transform.PassContext(trace=Trace(mod)):
@@ -120,20 +120,20 @@ target, dev = tvm.target.Target("nvidia/geforce-rtx-3080"), tvm.cuda()
 # assert relax.analysis.well_formed(mod)
 # mod.show(None, False)
 
-with target, tvm.transform.PassContext(trace=Trace(mod)):
+# with target, tvm.transform.PassContext(trace=Trace(mod)):
     #     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GeneralReduction())(mod)
-    mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.Fallback())(mod)
+    # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.Fallback())(mod)
 #     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GEMV())(mod)
-mod.show()
+# mod.show()
 # mod_deploy.show(None, False)
 
 # target, dev = "llvm", tvm.cpu()
-ex = relax.build(mod, target)
-vm = relax.VirtualMachine(ex, dev)
+# ex = relax.build(mod, target)
+# vm = relax.VirtualMachine(ex, dev)
 # vm["func"]
-inputs = [np.random.rand(3, 3).astype(np.float32), np.random.rand(3, 3).astype(np.float32)]
+# inputs = [np.random.rand(3, 3).astype(np.float32), np.random.rand(3, 3).astype(np.float32)]
 
-res = vm["main"](*[tvm.nd.array(x, dev) for x in inputs])
+# res = vm["main"](*[tvm.nd.array(x, dev) for x in inputs])
 # print(res.numpy())
 # res_np = inputs[0] @ inputs[1]
 # print(res_np, res_np.dtype)
@@ -182,3 +182,110 @@ res = vm["main"](*[tvm.nd.array(x, dev) for x in inputs])
 # sch.compute_inline(block)
 # after = sch.mod["main"]
 # after.show(None, False)
+
+
+@tvm.script.ir_module
+class TransformedGlobalToSharedWithLocalStage:
+    @T.prim_func
+    def main(a: T.handle, b: T.handle):
+        A = T.match_buffer(a, (1024, 1024))
+        B = T.match_buffer(b, (1024, 1024))
+        with T.block("root"):
+            T.block_attr({"warp_execution": True})
+            for bx in T.thread_binding(8, thread="blockIdx.x"):
+                for by in T.thread_binding(8, thread="blockIdx.y"):
+                    for ty in T.thread_binding(8, thread="threadIdx.y"):
+                        with T.block(""):
+                            T.reads(A[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
+                            T.writes(B[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
+                            A_shared_dyn = T.alloc_buffer(
+                                (128, 128), strides=(128, 1), scope="shared.dyn"
+                            )
+                            with T.block("A_shared"):
+                                T.reads(A[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
+                                T.writes(A_shared_dyn[0:128, 0:128])
+                                T.block_attr(
+                                    {"auto_copy": 1, "local_stage": True, "vector_bytes": 16}
+                                )
+                                A_shared_dyn_local = T.alloc_buffer((16, 4), scope="local")
+                                for ax0_ax1_fused_1 in T.thread_binding(8, thread="threadIdx.y"):
+                                    for ax0_ax1_fused_2 in T.thread_binding(
+                                        32, thread="threadIdx.x"
+                                    ):
+                                        for ax0_ax1_fused_0_cache in range(16):
+                                            for ax0_ax1_fused_3_cache in T.vectorized(4):
+                                                A_shared_dyn_local[
+                                                    ax0_ax1_fused_0_cache
+                                                    * 8
+                                                    * 32
+                                                    * 4
+                                                    // 128
+                                                    % 128
+                                                    // 8,
+                                                    ax0_ax1_fused_3_cache % 128,
+                                                ] = A[
+                                                    bx * 128
+                                                    + (
+                                                        (
+                                                            (
+                                                                ax0_ax1_fused_0_cache * 8
+                                                                + ax0_ax1_fused_1
+                                                            )
+                                                            * 32
+                                                            + ax0_ax1_fused_2
+                                                        )
+                                                        * 4
+                                                        + ax0_ax1_fused_3_cache
+                                                    )
+                                                    // 128
+                                                    % 128,
+                                                    by * 128
+                                                    + (
+                                                        (
+                                                            (
+                                                                ax0_ax1_fused_0_cache * 8
+                                                                + ax0_ax1_fused_1
+                                                            )
+                                                            * 32
+                                                            + ax0_ax1_fused_2
+                                                        )
+                                                        * 4
+                                                        + ax0_ax1_fused_3_cache
+                                                    )
+                                                    % 128,
+                                                ]
+                                        for ax0_ax1_fused_0 in range(16):
+                                            for ax0_ax1_fused_3 in T.vectorized(4):
+                                                A_shared_dyn[
+                                                    (
+                                                        (
+                                                            (ax0_ax1_fused_0 * 8 + ax0_ax1_fused_1)
+                                                            * 32
+                                                            + ax0_ax1_fused_2
+                                                        )
+                                                        * 4
+                                                        + ax0_ax1_fused_3
+                                                    )
+                                                    // 128
+                                                    % 128,
+                                                    (
+                                                        (
+                                                            (ax0_ax1_fused_0 * 8 + ax0_ax1_fused_1)
+                                                            * 32
+                                                            + ax0_ax1_fused_2
+                                                        )
+                                                        * 4
+                                                        + ax0_ax1_fused_3
+                                                    )
+                                                    % 128,
+                                                ] = A_shared_dyn_local[
+                                                    ax0_ax1_fused_0 * 8 * 32 * 4 // 128 % 128 // 8,
+                                                    ax0_ax1_fused_3 % 128,
+                                                ]
+                            with T.block("B"):
+                                T.reads(A_shared_dyn[0:128, 0:128])
+                                T.writes(B[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
+                                for ax0 in range(128):
+                                    for ax1 in range(128):
+                                        B[bx * 128 + ax0, by * 128 + ax1] = A_shared_dyn[ax0, ax1]
+TransformedGlobalToSharedWithLocalStage.show(None, False)
