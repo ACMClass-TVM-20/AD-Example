@@ -44,13 +44,13 @@ import tvm.dlight as dl
 #             R.output(gv)
 #         return gv
 
-    # @T.prim_func
-    # def main(input: T.Buffer((), "int32"), output: T.Buffer((), "int32")):
-    #     with T.block("T_add"):
-    #         vi = T.axis.spatial(1, T.int64(0))
-    #         T.reads(input[()])
-    #         T.writes(output[()])
-    #         output[()] = input[()] + 1
+# @T.prim_func
+# def main(input: T.Buffer((), "int32"), output: T.Buffer((), "int32")):
+#     with T.block("T_add"):
+#         vi = T.axis.spatial(1, T.int64(0))
+#         T.reads(input[()])
+#         T.writes(output[()])
+#         output[()] = input[()] + 1
 
 
 # mod1 = relax.transform.Normalize()(mod)
@@ -121,8 +121,8 @@ import tvm.dlight as dl
 # mod.show(None, False)
 
 # with target, tvm.transform.PassContext(trace=Trace(mod)):
-    #     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GeneralReduction())(mod)
-    # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.Fallback())(mod)
+#     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GeneralReduction())(mod)
+# mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.Fallback())(mod)
 #     # mod_deploy = dl.ApplyDefaultSchedule(dl.gpu.GEMV())(mod)
 # mod.show()
 # mod_deploy.show(None, False)
@@ -183,109 +183,44 @@ import tvm.dlight as dl
 # after = sch.mod["main"]
 # after.show(None, False)
 
+dtype = "float16"
+WARP_SIZE = 32
+local_size = 8
+M_DIM = 16
+N_DIM = 16
+scope = "shared"
+flag = True
 
-@tvm.script.ir_module
-class TransformedGlobalToSharedWithLocalStage:
-    @T.prim_func
-    def main(a: T.handle, b: T.handle):
-        A = T.match_buffer(a, (1024, 1024))
-        B = T.match_buffer(b, (1024, 1024))
-        with T.block("root"):
-            T.block_attr({"warp_execution": True})
-            for bx in T.thread_binding(8, thread="blockIdx.x"):
-                for by in T.thread_binding(8, thread="blockIdx.y"):
-                    for ty in T.thread_binding(8, thread="threadIdx.y"):
-                        with T.block(""):
-                            T.reads(A[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
-                            T.writes(B[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
-                            A_shared_dyn = T.alloc_buffer(
-                                (128, 128), strides=(128, 1), scope="shared.dyn"
-                            )
-                            with T.block("A_shared"):
-                                T.reads(A[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
-                                T.writes(A_shared_dyn[0:128, 0:128])
-                                T.block_attr(
-                                    {"auto_copy": 1, "local_stage": True, "vector_bytes": 16}
-                                )
-                                A_shared_dyn_local = T.alloc_buffer((16, 4), scope="local")
-                                for ax0_ax1_fused_1 in T.thread_binding(8, thread="threadIdx.y"):
-                                    for ax0_ax1_fused_2 in T.thread_binding(
-                                        32, thread="threadIdx.x"
-                                    ):
-                                        for ax0_ax1_fused_0_cache in range(16):
-                                            for ax0_ax1_fused_3_cache in T.vectorized(4):
-                                                A_shared_dyn_local[
-                                                    ax0_ax1_fused_0_cache
-                                                    * 8
-                                                    * 32
-                                                    * 4
-                                                    // 128
-                                                    % 128
-                                                    // 8,
-                                                    ax0_ax1_fused_3_cache % 128,
-                                                ] = A[
-                                                    bx * 128
-                                                    + (
-                                                        (
-                                                            (
-                                                                ax0_ax1_fused_0_cache * 8
-                                                                + ax0_ax1_fused_1
-                                                            )
-                                                            * 32
-                                                            + ax0_ax1_fused_2
-                                                        )
-                                                        * 4
-                                                        + ax0_ax1_fused_3_cache
-                                                    )
-                                                    // 128
-                                                    % 128,
-                                                    by * 128
-                                                    + (
-                                                        (
-                                                            (
-                                                                ax0_ax1_fused_0_cache * 8
-                                                                + ax0_ax1_fused_1
-                                                            )
-                                                            * 32
-                                                            + ax0_ax1_fused_2
-                                                        )
-                                                        * 4
-                                                        + ax0_ax1_fused_3_cache
-                                                    )
-                                                    % 128,
-                                                ]
-                                        for ax0_ax1_fused_0 in range(16):
-                                            for ax0_ax1_fused_3 in T.vectorized(4):
-                                                A_shared_dyn[
-                                                    (
-                                                        (
-                                                            (ax0_ax1_fused_0 * 8 + ax0_ax1_fused_1)
-                                                            * 32
-                                                            + ax0_ax1_fused_2
-                                                        )
-                                                        * 4
-                                                        + ax0_ax1_fused_3
-                                                    )
-                                                    // 128
-                                                    % 128,
-                                                    (
-                                                        (
-                                                            (ax0_ax1_fused_0 * 8 + ax0_ax1_fused_1)
-                                                            * 32
-                                                            + ax0_ax1_fused_2
-                                                        )
-                                                        * 4
-                                                        + ax0_ax1_fused_3
-                                                    )
-                                                    % 128,
-                                                ] = A_shared_dyn_local[
-                                                    ax0_ax1_fused_0 * 8 * 32 * 4 // 128 % 128 // 8,
-                                                    ax0_ax1_fused_3 % 128,
-                                                ]
-                            with T.block("B"):
-                                T.reads(A_shared_dyn[0:128, 0:128])
-                                T.writes(B[bx * 128 : bx * 128 + 128, by * 128 : by * 128 + 128])
-                                for ax0 in range(128):
-                                    for ax1 in range(128):
-                                        B[bx * 128 + ax0, by * 128 + ax1] = A_shared_dyn[ax0, ax1]
-TransformedGlobalToSharedWithLocalStage.show(None, False)
+
+@T.prim_func
+def mma_store_impl(a: T.handle, c: T.handle) -> None:
+    s0 = T.int32()
+    s1 = T.int32()
+
+    C_warp = T.match_buffer(a, [WARP_SIZE, local_size], dtype=dtype, scope="warp", offset_factor=1)
+    C = T.match_buffer(
+        c, [M_DIM, N_DIM], dtype=dtype, scope=scope, offset_factor=1, strides=[s0, s1]
+    )
+
+    with T.block("root"):
+        T.reads(C_warp[0:WARP_SIZE, 0:local_size])
+        T.writes(C[0:M_DIM, 0:N_DIM])
+
+        for tx in T.thread_binding(0, WARP_SIZE, "threadIdx.x"):
+            if flag:
+                T.evaluate(
+                    T.mma_store(
+                        M_DIM,
+                        N_DIM,
+                        C.access_ptr("w"),
+                        C_warp.data,
+                        C_warp.elem_offset,
+                        s0,
+                        dtype=dtype,
+                    )
+                )
+            else:
+                T.evaluate(0)
+
+
+mma_store_impl.show()

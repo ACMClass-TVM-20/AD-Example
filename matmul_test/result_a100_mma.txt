@@ -1,0 +1,2 @@
+[1, 4096, 4096, 4096]
+no unroll, swizzle, no pipeline: 101.03271487006248
