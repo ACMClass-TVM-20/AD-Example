@@ -32,7 +32,7 @@ class Module:
                                 C_warp = T.match_buffer(p_output0_intermediate_reindex_shared_dyn_warp[v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)], (T.int64(32), T.int64(8)), scope="warp", offset_factor=1)
                                 for tx in T.thread_binding(T.int64(32), thread="threadIdx.x"):
                                     T.mma_fill("float32", 8, C_warp.data, C_warp.elem_offset)
-            for ax3_0_0 in T.serial(T.int64(128), annotations={"software_pipeline_async_stages": [0], "software_pipeline_order": [0, 1, 2], "software_pipeline_stage": [0, 0, 3]}):
+            for ax3_0_0 in T.unroll(T.int64(128), annotations={"software_pipeline_async_stages": [0], "software_pipeline_order": [0, 1, 2], "software_pipeline_stage": [0, 0, 3]}):
                 for ax0_ax1_fused_0 in range(T.int64(4)):
                     for ax0_ax1_fused_1 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
                         for ax0_ax1_fused_2 in T.thread_binding(T.int64(2), thread="threadIdx.y"):
@@ -44,7 +44,6 @@ class Module:
                                         v2 = T.axis.spatial(T.int64(4096), ax3_0_0 * T.int64(32) + (ax0_ax1_fused_0 * T.int64(1024) + ax0_ax1_fused_1 * T.int64(512) + ax0_ax1_fused_2 * T.int64(256) + ax0_ax1_fused_3 * T.int64(8) + ax0_ax1_fused_4) % T.int64(32))
                                         T.reads(A[v0, v1, v2])
                                         T.writes(A_reindex_shared_dyn[v0, v1, v2])
-                                        T.block_attr({"permuted_layout": "g2s_A"})
                                         A_reindex_shared_dyn[v0, v1, v2] = A[v0, v1, v2]
                 for ax0_ax1_fused_0 in range(T.int64(4)):
                     for ax0_ax1_fused_1 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
@@ -57,7 +56,6 @@ class Module:
                                         v2 = T.axis.spatial(T.int64(4096), ax3_0_0 * T.int64(32) + (ax0_ax1_fused_0 * T.int64(1024) + ax0_ax1_fused_1 * T.int64(512) + ax0_ax1_fused_2 * T.int64(256) + ax0_ax1_fused_3 * T.int64(8) + ax0_ax1_fused_4) % T.int64(32))
                                         T.reads(B[v1, v2])
                                         T.writes(var_T_transpose_intermediate_reindex_shared_dyn[v0, v1, v2])
-                                        T.block_attr({"permuted_layout": "g2s_B"})
                                         var_T_transpose_intermediate_reindex_shared_dyn[v0, v1, v2] = B[v1, v2]
                 for ax1_0_2 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
                     for ax2_0_2 in T.thread_binding(T.int64(2), thread="threadIdx.y"):
@@ -69,7 +67,6 @@ class Module:
                                     v2_o = T.axis.spatial(T.int64(256), ax3_0_0 * T.int64(2) + ax3_0_1)
                                     T.reads(A_reindex_shared_dyn[v0_o, v1_o * T.int64(16):v1_o * T.int64(16) + T.int64(16), v2_o * T.int64(16):v2_o * T.int64(16) + T.int64(16)])
                                     T.writes(A_reindex_shared_dyn_warp[v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)])
-                                    T.block_attr({"permuted_layout": "s2l_A"})
                                     with T.block("A_reindex_shared.dyn_warp_o"):
                                         v1_i_o = T.axis.spatial(T.int64(1), T.int64(0))
                                         v2_i_o = T.axis.spatial(T.int64(1), T.int64(0))
@@ -86,7 +83,6 @@ class Module:
                                     v2_o = T.axis.spatial(T.int64(256), ax3_0_0 * T.int64(2) + ax3_0_1)
                                     T.reads(var_T_transpose_intermediate_reindex_shared_dyn[v0_o, v1_o * T.int64(16):v1_o * T.int64(16) + T.int64(16), v2_o * T.int64(16):v2_o * T.int64(16) + T.int64(16)])
                                     T.writes(var_T_transpose_intermediate_reindex_shared_dyn_warp[v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)])
-                                    T.block_attr({"permuted_layout": "s2l_B"})
                                     with T.block("var_T_transpose_intermediate_reindex_shared.dyn_warp_o"):
                                         v1_i_o = T.axis.spatial(T.int64(1), T.int64(0))
                                         v2_i_o = T.axis.spatial(T.int64(1), T.int64(0))
@@ -126,7 +122,6 @@ class Module:
                                 v2_o = T.axis.spatial(T.int64(256), ax0_ax1_0_0_ax2_0_0_ax1_0_1_ax2_0_1_fused % T.int64(32) * T.int64(8) + ax2_0 * T.int64(4) + ax2_1)
                                 T.reads(p_output0_intermediate_reindex_shared_dyn_warp[v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)])
                                 T.writes(p_output0_intermediate_reindex_shared_dyn[v0_o, v1_o * T.int64(16):v1_o * T.int64(16) + T.int64(16), v2_o * T.int64(16):v2_o * T.int64(16) + T.int64(16)])
-                                T.block_attr({"permuted_layout": "l2s_C"})
                                 with T.block("p_output0_intermediate_reindex_shared.dyn_warp_o"):
                                     v1_i_o = T.axis.spatial(T.int64(1), T.int64(0))
                                     v2_i_o = T.axis.spatial(T.int64(1), T.int64(0))
@@ -148,7 +143,6 @@ class Module:
                                     v2 = T.axis.spatial(T.int64(4096), ax0_ax1_0_0_ax2_0_0_ax1_0_1_ax2_0_1_fused % T.int64(32) * T.int64(128) + (ax0_ax1_fused_0 * T.int64(1024) + ax0_ax1_fused_1 * T.int64(512) + ax0_ax1_fused_2 * T.int64(256) + ax0_ax1_fused_3 * T.int64(8) + ax0_ax1_fused_4) % T.int64(128))
                                     T.reads(p_output0_intermediate_reindex_shared_dyn[v0, v1, v2])
                                     T.writes(var_compute_intermediate[T.int64(0), v1, v2])
-                                    T.block_attr({"permuted_layout": "s2g_C"})
                                     var_compute_intermediate[T.int64(0), v1, v2] = T.Cast("float16", p_output0_intermediate_reindex_shared_dyn[v0, v1, v2])
 
     @R.function

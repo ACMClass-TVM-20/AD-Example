@@ -28,7 +28,7 @@ import torch
 import tvm.dlight as dl
 
 reload = False
-batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
+batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 11008
 
 if len(sys.argv) > 1:
     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
