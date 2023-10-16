@@ -412,9 +412,8 @@ matmul_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0_3_init * 8)) + i] =
   for (int ax1_1 = 0; ax1_1 < 4; ++ax1_1) {
     for (int ax2_1 = 0; ax2_1 < 4; ++ax2_1) {
       for (int local_id = 0; local_id < 8; ++local_id) {
-(&(((float*)buf_dyn_shmem)[((((((int64_t)threadIdx.z) * (int64_t)8192) + (((int64_t)ax1_1) * (int64_t)2048)) + (((int64_t)threadIdx.y) * (int64_t)64)) + (((int64_t)ax2_1) * (int64_t)16))]))[((((int64_t)((((local_id % 4) / 2) * 8) + (threadIdx.x / 4))) * (int64_t)128) + ((int64_t)((((local_id / 4) * 8) + ((threadIdx.x % 4) * 2)) + (local_id % 2))))] = matmul_reindex_shared_dyn_warp[((ax1_1 * 32) + (ax2_1 * 8)) + local_id];
-}
-;
+        ((float*)buf_dyn_shmem)[(((((((((((int64_t)threadIdx.z) * (int64_t)8192) + (((int64_t)ax1_1) * (int64_t)2048)) + (((((int64_t)local_id) & (int64_t)3) >> (int64_t)1) * (int64_t)1024)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)128)) + (((int64_t)threadIdx.y) * (int64_t)64)) + (((int64_t)ax2_1) * (int64_t)16)) + ((((int64_t)local_id) >> (int64_t)2) * (int64_t)8)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)2)) + (((int64_t)local_id) & (int64_t)1))] = matmul_reindex_shared_dyn_warp[(((((int64_t)ax1_1) * (int64_t)32) + (((int64_t)ax2_1) * (int64_t)8)) + ((int64_t)local_id))];
+      }
     }
   }
   __syncthreads();

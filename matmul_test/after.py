@@ -134,7 +134,8 @@ class Module:
                                     C_warp = T.match_buffer(p_output0_intermediate_reindex_shared_dyn_warp[v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)], (T.int64(32), T.int64(8)), scope="warp", offset_factor=1)
                                     C = T.match_buffer(p_output0_intermediate_reindex_shared_dyn[v0_o, v1_o * T.int64(16):v1_o * T.int64(16) + T.int64(16), v2_o * T.int64(16):v2_o * T.int64(16) + T.int64(16)], (T.int64(16), T.int64(16)), strides=("C_s0", "C_s1"), scope="shared.dyn", offset_factor=1)
                                     for tx in T.thread_binding(T.int64(32), thread="threadIdx.x"):
-                                        T.mma_store("float32", 16, 16, T.tvm_access_ptr(T.type_annotation("float32"), C.data, C.elem_offset, C.strides[0] * T.int64(16), 2), C_warp.data, C_warp.elem_offset, C.strides[0])
+                                        for local_id in range(T.int64(8)):
+                                            C[T.int64(8) * (local_id % T.int64(4) // T.int64(2)) + tx // T.int64(4), T.int64(8) * (local_id // T.int64(4)) + tx % T.int64(4) * T.int64(2) + local_id % T.int64(2)] = C_warp[tx, local_id]
             for ax0_ax1_fused_0 in range(T.int64(16)):
                 for ax0_ax1_fused_1 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
                     for ax0_ax1_fused_2 in T.thread_binding(T.int64(2), thread="threadIdx.y"):
