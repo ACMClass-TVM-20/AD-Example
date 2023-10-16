@@ -41,7 +41,7 @@ fallback_dtype = "float32"
 atol = 1e-5
 rtol = 1e-5
 
-check_correctness, check_performance, check_register_usage = True, True, False
+check_correctness, check_performance, check_register_usage = True, True, True
 
 print(f"Running with dtype={dtype}, fallback_dtype={fallback_dtype}")
 print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")

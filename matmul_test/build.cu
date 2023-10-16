@@ -345,6 +345,8 @@ extern "C" __global__ void __launch_bounds__(128) default_function_kernel(half* 
   float matmul_reindex_shared_dyn_warp[128];
   half A_reindex_shared_dyn_warp[32];
   half T_transpose_reindex_shared_dyn_warp[32];
+  half A_reindex_shared_dyn_warp_1[32];
+  half T_transpose_reindex_shared_dyn_warp_1[32];
   for (int ax1_0_3_init = 0; ax1_0_3_init < 4; ++ax1_0_3_init) {
     for (int ax2_0_3_init = 0; ax2_0_3_init < 4; ++ax2_0_3_init) {
       for (int i = 0; i < 8; ++i) {
@@ -352,20 +354,136 @@ matmul_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0_3_init * 8)) + i] =
 ;
     }
   }
-  for (int ax3_0_0 = 0; ax3_0_0 < 128; ++ax3_0_0) {
+  for (int64_t ax0_ax1_fused_0 = 0; ax0_ax1_fused_0 < (int64_t)4; ++ax0_ax1_fused_0) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + ((((((ax0_ax1_fused_0 * (int64_t)2048) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)) + (int64_t)32768));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(A + (((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (ax0_ax1_fused_0 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)))), "n"(16)
+    );
+  }
+  }
+  for (int64_t ax0_ax1_fused_0_1 = 0; ax0_ax1_fused_0_1 < (int64_t)4; ++ax0_ax1_fused_0_1) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + (((((ax0_ax1_fused_0_1 * (int64_t)2048) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(B + (((((((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)524288) + (ax0_ax1_fused_0_1 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)))), "n"(16)
+    );
+  }
+  }
+__asm__ __volatile__("cp.async.commit_group;");
+
+  for (int64_t ax0_ax1_fused_0_2 = 0; ax0_ax1_fused_0_2 < (int64_t)4; ++ax0_ax1_fused_0_2) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + ((((((ax0_ax1_fused_0_2 * (int64_t)2048) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)) + (int64_t)40960));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(A + ((((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (ax0_ax1_fused_0_2 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)32))), "n"(16)
+    );
+  }
+  }
+  for (int64_t ax0_ax1_fused_0_3 = 0; ax0_ax1_fused_0_3 < (int64_t)4; ++ax0_ax1_fused_0_3) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + ((((((ax0_ax1_fused_0_3 * (int64_t)2048) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)) + (int64_t)8192));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(B + ((((((((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)524288) + (ax0_ax1_fused_0_3 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)32))), "n"(16)
+    );
+  }
+  }
+__asm__ __volatile__("cp.async.commit_group;");
+
+  for (int64_t ax0_ax1_fused_0_4 = 0; ax0_ax1_fused_0_4 < (int64_t)4; ++ax0_ax1_fused_0_4) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + ((((((ax0_ax1_fused_0_4 * (int64_t)2048) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)) + (int64_t)49152));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(A + ((((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (ax0_ax1_fused_0_4 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)64))), "n"(16)
+    );
+  }
+  }
+  for (int64_t ax0_ax1_fused_0_5 = 0; ax0_ax1_fused_0_5 < (int64_t)4; ++ax0_ax1_fused_0_5) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + ((((((ax0_ax1_fused_0_5 * (int64_t)2048) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)) + (int64_t)16384));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(B + ((((((((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)524288) + (ax0_ax1_fused_0_5 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)64))), "n"(16)
+    );
+  }
+  }
+__asm__ __volatile__("cp.async.commit_group;");
+
+  for (int64_t ax3_0_0 = 0; ax3_0_0 < (int64_t)125; ++ax3_0_0) {
     __syncthreads();
-    for (int64_t ax0_ax1_fused_0 = 0; ax0_ax1_fused_0 < (int64_t)4; ++ax0_ax1_fused_0) {
-      *(uint4*)(((half*)buf_dyn_shmem) + ((((((ax0_ax1_fused_0 * (int64_t)1024) + (((int64_t)threadIdx.z) * (int64_t)512)) + (((int64_t)threadIdx.y) * (int64_t)256)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)32)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)8)) + (int64_t)4096)) = *(uint4*)(A + ((((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (ax0_ax1_fused_0 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (((int64_t)ax3_0_0) * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)));
+    for (int64_t ax0_ax1_fused_0_6 = 0; ax0_ax1_fused_0_6 < (int64_t)4; ++ax0_ax1_fused_0_6) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + (((((((((ax3_0_0 + (int64_t)3) & (int64_t)3) * (int64_t)8192) + (ax0_ax1_fused_0_6 * (int64_t)2048)) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)) + (int64_t)32768));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(A + (((((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (ax0_ax1_fused_0_6 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)96))), "n"(16)
+    );
+  }
     }
-    for (int64_t ax0_ax1_fused_0_1 = 0; ax0_ax1_fused_0_1 < (int64_t)4; ++ax0_ax1_fused_0_1) {
-      *(uint4*)(((half*)buf_dyn_shmem) + (((((ax0_ax1_fused_0_1 * (int64_t)1024) + (((int64_t)threadIdx.z) * (int64_t)512)) + (((int64_t)threadIdx.y) * (int64_t)256)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)32)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)8))) = *(uint4*)(B + ((((((((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)524288) + (ax0_ax1_fused_0_1 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (((int64_t)ax3_0_0) * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)));
+    for (int64_t ax0_ax1_fused_0_7 = 0; ax0_ax1_fused_0_7 < (int64_t)4; ++ax0_ax1_fused_0_7) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int(buf_dyn_shmem + ((((((((ax3_0_0 + (int64_t)3) & (int64_t)3) * (int64_t)8192) + (ax0_ax1_fused_0_7 * (int64_t)2048)) + (((int64_t)threadIdx.z) * (int64_t)1024)) + (((int64_t)threadIdx.y) * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)64)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)16)));
+    __asm__ __volatile__(
+      #if TVM_ENABLE_L2_PREFETCH
+        "cp.async.cg.shared.global.L2::128B [%0], [%1], %2;"
+      #else
+        "cp.async.cg.shared.global [%0], [%1], %2;"
+      #endif
+        :: "r"(addr), "l"((void*)(B + (((((((((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)524288) + (ax0_ax1_fused_0_7 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)96))), "n"(16)
+    );
+  }
     }
+__asm__ __volatile__("cp.async.commit_group;");
+
+__asm__ __volatile__("cp.async.wait_group 3;");
+
     __syncthreads();
     for (int64_t ax3_0_1 = 0; ax3_0_1 < (int64_t)2; ++ax3_0_1) {
       for (int64_t ax0_0 = 0; ax0_0 < (int64_t)4; ++ax0_0) {
 
   {
-    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((int64_t)threadIdx.z) * (int64_t)2048) + (ax0_0 * (int64_t)512)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)32)) + ((((ax3_0_1 * (int64_t)2) + (((int64_t)threadIdx.x) >> (int64_t)4)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)4096)])) + (int64_t)0);
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((ax3_0_0 & (int64_t)3) * (int64_t)4096) + (((int64_t)threadIdx.z) * (int64_t)2048)) + (ax0_0 * (int64_t)512)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)32)) + ((((ax3_0_1 * (int64_t)2) + (((int64_t)threadIdx.x) >> (int64_t)4)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)16384)])) + (int64_t)0);
     __asm__ __volatile__(
       "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
       "{%0, %1, %2, %3}, [%4];\n"
@@ -377,7 +495,7 @@ matmul_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0_3_init * 8)) + i] =
       for (int64_t ax0_0_1 = 0; ax0_0_1 < (int64_t)4; ++ax0_0_1) {
 
   {
-    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((int64_t)threadIdx.y) * (int64_t)2048) + (ax0_0_1 * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)256)) + ((((int64_t)threadIdx.x) & (int64_t)7) * (int64_t)32)) + ((((ax3_0_1 * (int64_t)2) + ((((int64_t)threadIdx.x) & (int64_t)15) >> (int64_t)3)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8))])) + (int64_t)0);
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((ax3_0_0 & (int64_t)3) * (int64_t)4096) + (((int64_t)threadIdx.y) * (int64_t)2048)) + (ax0_0_1 * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)256)) + ((((int64_t)threadIdx.x) & (int64_t)7) * (int64_t)32)) + ((((ax3_0_1 * (int64_t)2) + ((((int64_t)threadIdx.x) & (int64_t)15) >> (int64_t)3)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8))])) + (int64_t)0);
     __asm__ __volatile__(
       "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
       "{%0, %1, %2, %3}, [%4];\n"
@@ -408,18 +526,165 @@ matmul_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0_3_init * 8)) + i] =
       }
     }
   }
+__asm__ __volatile__("cp.async.wait_group 2;");
+
   __syncthreads();
-  for (int ax1_1 = 0; ax1_1 < 4; ++ax1_1) {
-    for (int ax2_1 = 0; ax2_1 < 4; ++ax2_1) {
-      for (int local_id = 0; local_id < 8; ++local_id) {
-        ((float*)buf_dyn_shmem)[(((((((((((int64_t)threadIdx.z) * (int64_t)8192) + (((int64_t)ax1_1) * (int64_t)2048)) + (((((int64_t)local_id) & (int64_t)3) >> (int64_t)1) * (int64_t)1024)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)128)) + (((int64_t)threadIdx.y) * (int64_t)64)) + (((int64_t)ax2_1) * (int64_t)16)) + ((((int64_t)local_id) >> (int64_t)2) * (int64_t)8)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)2)) + (((int64_t)local_id) & (int64_t)1))] = matmul_reindex_shared_dyn_warp[(((((int64_t)ax1_1) * (int64_t)32) + (((int64_t)ax2_1) * (int64_t)8)) + ((int64_t)local_id))];
+  for (int64_t ax3_0_1_1 = 0; ax3_0_1_1 < (int64_t)2; ++ax3_0_1_1) {
+    for (int64_t ax0_0_2 = 0; ax0_0_2 < (int64_t)4; ++ax0_0_2) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((int64_t)threadIdx.z) * (int64_t)2048) + (ax0_0_2 * (int64_t)512)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)32)) + ((((ax3_0_1_1 * (int64_t)2) + (((int64_t)threadIdx.x) >> (int64_t)4)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)20480)])) + (int64_t)0);
+    __asm__ __volatile__(
+      "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+      "{%0, %1, %2, %3}, [%4];\n"
+      : "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[0]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[1]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[2]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[3])
+      : "r"(addr)
+    );
+  }
+    }
+    for (int64_t ax0_0_3 = 0; ax0_0_3 < (int64_t)4; ++ax0_0_3) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[((((((((int64_t)threadIdx.y) * (int64_t)2048) + (ax0_0_3 * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)256)) + ((((int64_t)threadIdx.x) & (int64_t)7) * (int64_t)32)) + ((((ax3_0_1_1 * (int64_t)2) + ((((int64_t)threadIdx.x) & (int64_t)15) >> (int64_t)3)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)4096)])) + (int64_t)0);
+    __asm__ __volatile__(
+      "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+      "{%0, %1, %2, %3}, [%4];\n"
+      : "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_3 * (int64_t)8)))[0]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_3 * (int64_t)8)))[1]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_3 * (int64_t)8)))[2]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_3 * (int64_t)8)))[3])
+      : "r"(addr)
+    );
+  }
+    }
+    for (int ax1_0_3_1 = 0; ax1_0_3_1 < 4; ++ax1_0_3_1) {
+      for (int ax2_0_3_1 = 0; ax2_0_3_1 < 4; ++ax2_0_3_1) {
+
+  {
+    __asm__ __volatile__(
+      "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
+      "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
+      :  "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[0]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[1]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[2]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[3])
+      : "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[1]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[2]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[3]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_1) * (int64_t)8)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[0]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[2]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[3]));
+  }
+
+  {
+    __asm__ __volatile__(
+      "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
+      "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
+      :  "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[3])
+      : "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[1]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[2]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[3]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_1) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_1) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[3]));
+  }
+      }
+    }
+  }
+__asm__ __volatile__("cp.async.wait_group 1;");
+
+  __syncthreads();
+  for (int64_t ax3_0_1_2 = 0; ax3_0_1_2 < (int64_t)2; ++ax3_0_1_2) {
+    for (int64_t ax0_0_4 = 0; ax0_0_4 < (int64_t)4; ++ax0_0_4) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((int64_t)threadIdx.z) * (int64_t)2048) + (ax0_0_4 * (int64_t)512)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)32)) + ((((ax3_0_1_2 * (int64_t)2) + (((int64_t)threadIdx.x) >> (int64_t)4)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)24576)])) + (int64_t)0);
+    __asm__ __volatile__(
+      "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+      "{%0, %1, %2, %3}, [%4];\n"
+      : "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[0]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[1]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[2]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[3])
+      : "r"(addr)
+    );
+  }
+    }
+    for (int64_t ax0_0_5 = 0; ax0_0_5 < (int64_t)4; ++ax0_0_5) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[((((((((int64_t)threadIdx.y) * (int64_t)2048) + (ax0_0_5 * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)256)) + ((((int64_t)threadIdx.x) & (int64_t)7) * (int64_t)32)) + ((((ax3_0_1_2 * (int64_t)2) + ((((int64_t)threadIdx.x) & (int64_t)15) >> (int64_t)3)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)8192)])) + (int64_t)0);
+    __asm__ __volatile__(
+      "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+      "{%0, %1, %2, %3}, [%4];\n"
+      : "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_5 * (int64_t)8)))[0]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_5 * (int64_t)8)))[1]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_5 * (int64_t)8)))[2]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_5 * (int64_t)8)))[3])
+      : "r"(addr)
+    );
+  }
+    }
+    for (int ax1_0_3_2 = 0; ax1_0_3_2 < 4; ++ax1_0_3_2) {
+      for (int ax2_0_3_2 = 0; ax2_0_3_2 < 4; ++ax2_0_3_2) {
+
+  {
+    __asm__ __volatile__(
+      "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
+      "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
+      :  "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[0]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[1]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[2]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[3])
+      : "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[1]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[2]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[3]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_2) * (int64_t)8)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[0]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[2]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[3]));
+  }
+
+  {
+    __asm__ __volatile__(
+      "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
+      "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
+      :  "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[3])
+      : "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[1]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[2]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[3]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_2) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_2) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[3]));
+  }
+      }
+    }
+  }
+__asm__ __volatile__("cp.async.wait_group 0;");
+
+  __syncthreads();
+  for (int64_t ax3_0_1_3 = 0; ax3_0_1_3 < (int64_t)2; ++ax3_0_1_3) {
+    for (int64_t ax0_0_6 = 0; ax0_0_6 < (int64_t)4; ++ax0_0_6) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[(((((((int64_t)threadIdx.z) * (int64_t)2048) + (ax0_0_6 * (int64_t)512)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)32)) + ((((ax3_0_1_3 * (int64_t)2) + (((int64_t)threadIdx.x) >> (int64_t)4)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)28672)])) + (int64_t)0);
+    __asm__ __volatile__(
+      "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+      "{%0, %1, %2, %3}, [%4];\n"
+      : "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[0]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[1]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[2]), "=r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[3])
+      : "r"(addr)
+    );
+  }
+    }
+    for (int64_t ax0_0_7 = 0; ax0_0_7 < (int64_t)4; ++ax0_0_7) {
+
+  {
+    unsigned int addr = cast_smem_ptr_to_int((&(((half*)buf_dyn_shmem)[((((((((int64_t)threadIdx.y) * (int64_t)2048) + (ax0_0_7 * (int64_t)512)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)256)) + ((((int64_t)threadIdx.x) & (int64_t)7) * (int64_t)32)) + ((((ax3_0_1_3 * (int64_t)2) + ((((int64_t)threadIdx.x) & (int64_t)15) >> (int64_t)3)) ^ ((((int64_t)threadIdx.x) & (int64_t)7) >> (int64_t)1)) * (int64_t)8)) + (int64_t)12288)])) + (int64_t)0);
+    __asm__ __volatile__(
+      "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
+      "{%0, %1, %2, %3}, [%4];\n"
+      : "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_7 * (int64_t)8)))[0]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_7 * (int64_t)8)))[1]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_7 * (int64_t)8)))[2]), "=r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (ax0_0_7 * (int64_t)8)))[3])
+      : "r"(addr)
+    );
+  }
+    }
+    for (int ax1_0_3_3 = 0; ax1_0_3_3 < 4; ++ax1_0_3_3) {
+      for (int ax2_0_3_3 = 0; ax2_0_3_3 < 4; ++ax2_0_3_3) {
+
+  {
+    __asm__ __volatile__(
+      "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
+      "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
+      :  "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[0]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[1]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[2]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[3])
+      : "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[1]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[2]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[3]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_3) * (int64_t)8)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[0]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[2]), "f"(((float *)(matmul_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[3]));
+  }
+
+  {
+    __asm__ __volatile__(
+      "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
+      "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
+      :  "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[3])
+      : "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[1]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[2]), "r"(((unsigned *)(A_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[3]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_3) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(T_transpose_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_3) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(matmul_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[3]));
+  }
       }
     }
   }
   __syncthreads();
-  for (int ax0_ax1_fused_0_2 = 0; ax0_ax1_fused_0_2 < 16; ++ax0_ax1_fused_0_2) {
+  for (int64_t ax1_1 = 0; ax1_1 < (int64_t)4; ++ax1_1) {
+    for (int64_t ax2_1 = 0; ax2_1 < (int64_t)4; ++ax2_1) {
+      for (int64_t local_id = 0; local_id < (int64_t)8; ++local_id) {
+        ((float*)buf_dyn_shmem)[(((((((((int64_t)threadIdx.z) * (int64_t)8192) + (ax1_1 * (int64_t)2048)) + (((local_id & (int64_t)3) >> (int64_t)1) * (int64_t)1024)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)128)) + (((((((int64_t)threadIdx.y) * (int64_t)8) + (ax2_1 * (int64_t)2)) + (local_id >> (int64_t)2)) ^ (((int64_t)threadIdx.x) >> (int64_t)2)) * (int64_t)8)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)2)) + (local_id & (int64_t)1))] = matmul_reindex_shared_dyn_warp[(((ax1_1 * (int64_t)32) + (ax2_1 * (int64_t)8)) + local_id)];
+      }
+    }
+  }
+  __syncthreads();
+  for (int64_t ax0_ax1_fused_0_8 = 0; ax0_ax1_fused_0_8 < (int64_t)16; ++ax0_ax1_fused_0_8) {
     uint4 __1;
-    ulonglong4 v_ = *(ulonglong4*)(((float*)buf_dyn_shmem) + ((((((int64_t)ax0_ax1_fused_0_2) * (int64_t)1024) + (((int64_t)threadIdx.z) * (int64_t)512)) + (((int64_t)threadIdx.y) * (int64_t)256)) + (((int64_t)threadIdx.x) * (int64_t)8)));
+    ulonglong4 v_ = *(ulonglong4*)(((float*)buf_dyn_shmem) + (((((ax0_ax1_fused_0_8 * (int64_t)1024) + (((int64_t)threadIdx.z) * (int64_t)512)) + (((int64_t)threadIdx.y) * (int64_t)256)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)128)) + (((((int64_t)threadIdx.x) & (int64_t)15) ^ (((((int64_t)threadIdx.z) * (int64_t)4) + (((int64_t)threadIdx.y) * (int64_t)2)) + (((int64_t)threadIdx.x) >> (int64_t)4))) * (int64_t)8)));
     ((half2*)(&(__1.x)))->x = (half)(((float2*)(&(v_.x)))->x);
     ((half2*)(&(__1.x)))->y = (half)(((float2*)(&(v_.x)))->y);
     ((half2*)(&(__1.y)))->x = (half)(((float2*)(&(v_.y)))->x);
@@ -428,7 +693,7 @@ matmul_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0_3_init * 8)) + i] =
     ((half2*)(&(__1.z)))->y = (half)(((float2*)(&(v_.z)))->y);
     ((half2*)(&(__1.w)))->x = (half)(((float2*)(&(v_.w)))->x);
     ((half2*)(&(__1.w)))->y = (half)(((float2*)(&(v_.w)))->y);
-    *(uint4*)(compute + ((((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (((int64_t)ax0_ax1_fused_0_2) * (int64_t)32768)) + (((int64_t)threadIdx.z) * (int64_t)16384)) + (((int64_t)threadIdx.y) * (int64_t)8192)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)4096)) + ((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)128)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)8))) = __1;
+    *(uint4*)(compute + ((((((((((int64_t)((int)blockIdx.x)) >> (int64_t)5) * (int64_t)524288) + (ax0_ax1_fused_0_8 * (int64_t)32768)) + (((int64_t)threadIdx.z) * (int64_t)16384)) + (((int64_t)threadIdx.y) * (int64_t)8192)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)4096)) + ((((int64_t)((int)blockIdx.x)) & (int64_t)31) * (int64_t)128)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)8))) = __1;
   }
 }
 
