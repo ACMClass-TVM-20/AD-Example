@@ -28,7 +28,7 @@ import torch
 import tvm.dlight as dl
 
 reload = False
-batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 11008
+batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
 
 if len(sys.argv) > 1:
     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
@@ -116,9 +116,9 @@ if not reload:
     print("<schedule done>")
 
     # build
-    func_name = "fused_fused_relax_permute_dims_relax_matmul_cast"
+    func = next(mod.functions.values())
     with tvm.transform.PassContext(config={"tir.use_async_copy": 1}):
-        ex = tvm.build(mod[func_name], target=target)
+        ex = tvm.build(func, target=target)
     if target.kind.name == "cuda":
         print(ex.imported_modules[0].get_source(), file=open(dump_path, "w"))
     ex.export_library(ex_path)
