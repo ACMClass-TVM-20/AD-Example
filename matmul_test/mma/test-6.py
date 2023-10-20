@@ -7,6 +7,7 @@
 """
 import os
 import sys
+from typing import List
 import tvm
 from tvm import relax, tir, te, topi
 from tvm.dlight.gpu import fallback
@@ -27,24 +28,43 @@ from tvm.relax.dpl.pattern import is_op, wildcard
 import torch
 import tvm.dlight as dl
 
-reload = False
-batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
+check_correctness, check_performance, check_register_usage = True, True, False
+
+# batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
+batch, shape_m, shape_k, shape_n = 4, 512, 4096, 4096
+transpose_A, transpose_B = False, True
 
 if len(sys.argv) > 1:
     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
 
+
+dtype, fallback_dtype, shape_dtype = "float16", "float32", "int64"
+atol, rtol = 1e-3, 1e-3
+
+
+print(f"Running with dtype, fallback_dtype, shape_dtype = {dtype, fallback_dtype, shape_dtype}")
+print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
+print(f"Running with transpose_A, transpose_B = {transpose_A, transpose_B}")
+print(f"Running with atol, rtol = {atol, rtol}")
+
+
+def handle_symbolic_shape(val, name):
+    return (val, val) if val > 0 else (-val, tir.Var(name, shape_dtype))
+
+
+batch, tvm_batch = handle_symbolic_shape(batch, "batch")
+shape_m, tvm_shape_m = handle_symbolic_shape(shape_m, "m")
+shape_k, tvm_shape_k = handle_symbolic_shape(shape_k, "k")
+shape_n, tvm_shape_n = handle_symbolic_shape(shape_n, "n")
+
+
 shape_1 = (batch, shape_m, shape_k)
 shape_2 = (shape_n, shape_k)
 shape_3 = (batch, shape_m, shape_n)
-dtype = "float16"
-fallback_dtype = "float32"
-atol = 1e-5
-rtol = 1e-5
+tvm_shape_1 = (tvm_batch, tvm_shape_m, tvm_shape_k)
+tvm_shape_2 = (tvm_shape_n, tvm_shape_k)
+tvm_shape_3 = (tvm_batch, tvm_shape_m, tvm_shape_n)
 
-check_correctness, check_performance, check_register_usage = True, True, True
-
-print(f"Running with dtype={dtype}, fallback_dtype={fallback_dtype}")
-print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
 
 # target, dev = tvm.target.Target("llvm"), tvm.cpu()
 # target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
@@ -62,19 +82,32 @@ dump_path = os.path.join(cur_path, "build" + suffix_map[target.kind.default_keys
 ex_path = os.path.join(cur_path, "build" + suffix_map[target.kind.default_keys[0]] + ".so")
 cubin_path = os.path.join(cur_path, "build.cubin")
 
-if not reload:
 
-    @I.ir_module
-    class Module:
-        @R.function
-        def main(A: R.Tensor(shape_1, dtype), B: R.Tensor(shape_2, dtype)):
-            with R.dataflow():
-                lv1 = R.permute_dims(B)
-                lv2 = R.matmul(A, lv1, out_dtype=fallback_dtype)
-                gv = R.astype(lv2, dtype)
-                R.output(gv)
-            return gv
+def get_mod():
+    def transpose_if(var, cond):
+        return R.permute_dims(var) if cond else var
 
+    A = relax.Var("A", relax.TensorStructInfo(tvm_shape_1, dtype))
+    B = relax.Var("B", relax.TensorStructInfo(tvm_shape_2, dtype))
+    bb = BlockBuilder()
+    with bb.function("main", [A, B]):
+        with bb.dataflow():
+            lv = bb.emit(
+                relax.op.matmul(
+                    transpose_if(A, transpose_A),
+                    transpose_if(B, transpose_B),
+                    out_dtype=fallback_dtype,
+                )
+            )
+            gv = bb.emit_output(relax.op.astype(lv, dtype))
+        bb.emit_func_output(gv)
+
+    mod = bb.get()
+    mod.show(None, False)
+    return mod
+
+
+def transform_mod(mod):
     def transpose_matmul_pattern():
         w = wildcard()
         x = wildcard()
@@ -95,7 +128,6 @@ if not reload:
 
         return o, annotations, _check
 
-    mod = Module
     mod = relax.transform.FuseOpsByPattern(
         [("transpose_matmul_fuse", *transpose_matmul_pattern())]
     )(mod)
@@ -107,6 +139,10 @@ if not reload:
 
     print(mod.script(), file=open(before_path, "w"))
     print("<transform done>")
+    return mod
+
+
+def build_mod(mod):
     if target.kind.name == "cuda":
         with target, tvm.transform.PassContext(trace=Trace(mod)):
             mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulTensorizationMMA())(mod)
@@ -123,31 +159,32 @@ if not reload:
         print(ex.imported_modules[0].get_source(), file=open(dump_path, "w"))
     ex.export_library(ex_path)
     print("<build done>")
-else:
-    ex = tvm.runtime.load_module(ex_path)
-    print("<reload done>")
+    return ex
 
-
-# generate inputs
-np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2, shape_3]]
-torch_inputs = [torch.tensor(x).to("cuda") for x in np_inputs[:2]]
-tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
 
 # Step 1. check correctness
-if check_correctness:
+def fn_check_correctness(
+    ex: tvm.runtime.Module, tvm_inputs: List[tvm.runtime.NDArray], torch_inputs: List[torch.Tensor]
+):
     ex(tvm_inputs[1], tvm_inputs[0], tvm_inputs[2])
     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-    torch_res = torch_inputs[0] @ torch_inputs[1].T
-    print("torch:\n", torch_res.detach().cpu().numpy())
-    print("tvm:\n", tvm_inputs[2].numpy())
-    assert np.allclose(
-        torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=1e-3, rtol=1e-3
+    torch_res = (torch_inputs[0].T if transpose_A else torch_inputs[0]) @ (
+        torch_inputs[1].T if transpose_B else torch_inputs[1]
     )
-    # assert np.allclose(torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=atol, rtol=rtol)
+
+    close = np.allclose(
+        torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=atol, rtol=rtol
+    )
+    if not close:
+        print("torch:\n", torch_res.detach().cpu().numpy())
+        print("tvm:\n", tvm_inputs[2].numpy())
+        assert close
+
     print("<correctness check done>")
 
+
 # Step 2. check performance
-if check_performance:
+def fn_check_performance(ex: tvm.runtime.Module, tvm_inputs: List[tvm.runtime.NDArray]):
     eval = ex.time_evaluator(ex.entry_name, dev, 10, 10)
     report = eval(tvm_inputs[1], tvm_inputs[0], tvm_inputs[2])
     print(report)
@@ -157,9 +194,31 @@ if check_performance:
     print(f"Op latency: {op_time*1e6} us, TFlops: {tflops}")
     print("<performance check done>")
 
+
 # Step 3. check register usage
-if check_register_usage:
+def fn_check_register_usage():
     os.system(
         f"nvcc -maxrregcount=255 -arch=sm_89 --cubin -w -Xptxas -v {dump_path} -o {cubin_path}"
     )
     print("<register usage check done>")
+
+
+# generate and build module
+mod = get_mod()
+mod = transform_mod(mod)
+ex = build_mod(mod)
+
+# generate inputs
+np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2, shape_3]]
+torch_inputs = [torch.tensor(x).to("cuda") for x in np_inputs[:2]]
+tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
+
+# run checks
+if check_correctness:
+    fn_check_correctness(ex, tvm_inputs, torch_inputs)
+
+if check_performance:
+    fn_check_performance(ex, tvm_inputs)
+
+if check_register_usage:
+    fn_check_register_usage()

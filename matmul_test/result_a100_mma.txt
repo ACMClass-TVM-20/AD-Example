@@ -1,4 +1,780 @@
 [1, 4096, 4096, 4096]
-no unroll, swizzle, no pipeline: 146.5707165816275
-no unroll, swizzle, pipeline: 231.94977066517487
+no z curve, no unroll, swizzle, no pipeline: 146.5707165816275
+no z curve, no unroll, swizzle, pipeline: 234.15924812637525
 
+z curve, no unroll, swizzle, pipeline:
+[None, 11], [None, 11]: 181.635491073408
+L2 Hit Rate                            %        88.01
+[1, None], [1, None]: 231.53364609593723
+L2 Hit Rate                            %        90.29
+[None, 16], [None, 16]: 232
+L2 Hit Rate                            %        90.72
+[None, 8], [None, 8]: 231.93375357245924
+L2 Hit Rate                            %        89.92
+
+
+[1, 4096, 4096, 11008]
+no z curve, no unroll, swizzle, pipeline: 229.8512431999619
+L2 Hit Rate                            %        81.82
+
+z_order_factor_m=[None, 11], z_order_factor_n=[None, 13]:187.6997675710669
+L2 Hit Rate                            %        87.92
+
+OPT   Estimated Speedup: 17.64%
+        The memory access pattern for shared stores might not be optimal and causes on average a 3.4 - way bank
+        conflict across all 1293056 shared store requests.This results in 792301 bank conflicts,  which represent
+        17.91% of the overall 4422773 wavefronts for shared stores. Check the Source Counters section for
+
+[1, 4096, 11008, 4096]
+no z curve, no unroll, swizzle, pipeline: 226.32084154911956
+L2 Hit Rate                            %        89.64
+
+(1, 4094, 4094, 4094)
+no z curve, no unroll, swizzle, pipeline: 47.490562865238545
+
+
+no unroll, no pipeline
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 208 registers, 376 bytes cmem[0]
+ptxas fatal   : Output file '/home/yxdong/code/tvm-develop/other-repos/AD-Example/matmul_test/build.cubin' could not be opened
+
+unroll, no pipeline
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 254 registers, 376 bytes cmem[0]
+ptxas fatal   : Output file '/home/yxdong/code/tvm-develop/other-repos/AD-Example/matmul_test/build.cubin' could not be opened
+
+no unroll, pipeline
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 168 registers, 376 bytes cmem[0]
+ptxas fatal   : Output file '/home/yxdong/code/tvm-develop/other-repos/AD-Example/matmul_test/build.cubin' could not be opened
+
+unroll, pipeline
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    56 bytes stack frame, 64 bytes spill stores, 476 bytes spill loads
+ptxas info    : Used 255 registers, 376 bytes cmem[0]
+ptxas fatal   : Output file '/home/yxdong/code/tvm-develop/other-repos/AD-Example/matmul_test/build.cubin' could not be opened
+
+
+# 1st batch test
+
+Testing shape: [1, 512, 4096, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 4096, 4096)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[  75.5     18.39   -30.05  ...  -69.1     28.66     2.021]
+  [  60.84     8.195   24.78  ...   73.06    11.46   157.6  ]
+  [ -18.48   -22.38   103.44  ...  -28.03   -33.38   -13.53 ]
+  ...
+  [-125.25    41.3    -71.25  ...   44.6     16.31    61.34 ]
+  [  73.9     31.47    49.75  ...  -75.4     10.67   -33.1  ]
+  [  65.9    -83.5     77.44  ...   16.92   -14.75    79.94 ]]]
+tvm:
+ [[[  75.5     18.39   -30.05  ...  -69.1     28.66     2.021]
+  [  60.84     8.195   24.78  ...   73.06    11.46   157.6  ]
+  [ -18.48   -22.38   103.44  ...  -28.03   -33.38   -13.53 ]
+  ...
+  [-125.25    41.3    -71.25  ...   44.6     16.31    61.34 ]
+  [  73.9     31.47    49.75  ...  -75.4     10.67   -33.1  ]
+  [  65.9    -83.5     77.44  ...   16.92   -14.75    79.94 ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.1224       0.1225       0.1228       0.1221       0.0002
+Op latency: 122.43967000000002 us, TFlops: 140.31293276108957
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 203 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 512, 11008, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 11008, 4096)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[  24.12   -76.7    176.    ...  141.8    -12.336   -8.625]
+  [ 125.1     83.3    100.2   ...   89.2     28.7     80.6  ]
+  [ 154.      30.48    79.56  ...  100.6    120.6     25.17 ]
+  ...
+  [ -18.36   132.     -92.75  ...  -46.94    27.16    72.44 ]
+  [ 281.      40.2    137.8   ... -326.5    -45.12  -190.1  ]
+  [ -79.5     43.7   -122.75  ... -146.5    216.2     97.6  ]]]
+tvm:
+ [[[  24.12   -76.7    176.    ...  141.8    -12.336   -8.625]
+  [ 125.1     83.3    100.2   ...   89.2     28.7     80.6  ]
+  [ 154.      30.48    79.56  ...  100.6    120.6     25.17 ]
+  ...
+  [ -18.36   132.     -92.75  ...  -46.94    27.16    72.44 ]
+  [ 281.      40.2    137.8   ... -326.5    -45.12  -190.1  ]
+  [ -79.5     43.7   -122.75  ... -146.5    216.2     97.6  ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.3265       0.3268       0.3271       0.3245       0.0007
+Op latency: 326.52286999999995 us, TFlops: 141.40172917137474
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 204 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 512, 4096, 11008]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 4096, 11008)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[ -20.45   -57.84   -98.8   ...  -42.06    71.2    -28.1  ]
+  [  23.88   -20.38   -50.03  ...   41.1    100.8    -17.94 ]
+  [   8.74    -3.168 -131.5   ...   -4.13    42.9     32.84 ]
+  ...
+  [-122.94   -89.5    -98.9   ...   -7.145  105.25    -1.392]
+  [  19.84   -21.12    33.25  ...   52.47    20.12   -22.06 ]
+  [ -68.3     19.95  -163.8   ...   35.28    66.4     61.06 ]]]
+tvm:
+ [[[ -20.45   -57.84   -98.8   ...  -42.06    71.2    -28.1  ]
+  [  23.88   -20.38   -50.03  ...   41.1    100.8    -17.94 ]
+  [   8.74    -3.168 -131.5   ...   -4.13    42.9     32.84 ]
+  ...
+  [-122.94   -89.5    -98.9   ...   -7.145  105.25    -1.392]
+  [  19.84   -21.12    33.25  ...   52.47    20.12   -22.06 ]
+  [ -68.3     19.95  -163.8   ...   35.28    66.4     61.06 ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.2425       0.2427       0.2433       0.2413       0.0006
+Op latency: 242.49338 us, TFlops: 190.40065519314382
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 207 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 2048, 4096, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 2048, 4096, 4096)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[-37.62    -8.37     5.13   ...  14.71    -3.393   84.56  ]
+  [ 10.81   -79.44   -17.02   ... -54.06   -57.16   -33.38  ]
+  [ 32.5    -22.8    208.4    ... -78.25     7.36   -75.2   ]
+  ...
+  [-49.22     6.707  -64.94   ... 177.9     64.9     48.06  ]
+  [119.5    -32.03    -3.385  ... -20.94   -23.58    58.75  ]
+  [ 41.44   -35.34   -65.94   ... -15.7     -0.7295 -14.23  ]]]
+tvm:
+ [[[-37.62    -8.37     5.13   ...  14.71    -3.393   84.56  ]
+  [ 10.81   -79.44   -17.02   ... -54.06   -57.16   -33.38  ]
+  [ 32.5    -22.8    208.4    ... -78.25     7.36   -75.2   ]
+  ...
+  [-49.22     6.707  -64.94   ... 177.9     64.9     48.06  ]
+  [119.5    -32.03    -3.385  ... -20.94   -23.58    58.75  ]
+  [ 41.44   -35.34   -65.94   ... -15.7     -0.7295 -14.23  ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.3188       0.3182       0.3234       0.3175       0.0017
+Op latency: 318.84281 us, TFlops: 215.52776032804383
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 203 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 2048, 11008, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 2048, 11008, 4096)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[ 122.1     93.5    -58.9   ...  130.4     41.62    73.25 ]
+  [  21.25   255.9     63.3   ...   -7.02    52.97  -115.9  ]
+  [ 266.      68.     -79.3   ...   52.1    -10.94    92.44 ]
+  ...
+  [  16.81   164.1   -201.9   ... -198.     -34.78   -37.56 ]
+  [  38.4   -130.6    182.    ...  113.4    125.1      3.695]
+  [ -67.06    95.9    124.94  ...  234.9     -3.395  149.2  ]]]
+tvm:
+ [[[ 122.1     93.5    -58.9   ...  130.4     41.62    73.25 ]
+  [  21.25   255.9     63.3   ...   -7.02    52.97  -115.9  ]
+  [ 266.      68.     -79.3   ...   52.1    -10.94    92.44 ]
+  ...
+  [  16.81   164.1   -201.9   ... -198.     -34.78   -37.56 ]
+  [  38.4   -130.6    182.    ...  113.4    125.1      3.695]
+  [ -67.06    95.9    124.94  ...  234.9     -3.395  149.2  ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.9314       0.9236       0.9528       0.9189       0.0137
+Op latency: 931.3689200000001 us, TFlops: 198.29263116059312
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 204 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 2048, 4096, 11008]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 2048, 4096, 11008)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[ -60.06   -61.25     3.773 ...    5.637  -74.2    240.1  ]
+  [  55.03    -7.723  -68.3   ...  114.7     -9.74    26.11 ]
+  [   8.34   -25.67   -44.94  ...   72.94    90.44   115.5  ]
+  ...
+  [ -74.8    -45.4     38.9   ... -176.5    -62.84   -68.5  ]
+  [ -42.56   101.1     36.4   ...   11.8     54.7     76.7  ]
+  [-163.8    -48.34   -25.31  ...   76.3    -27.6   -143.   ]]]
+tvm:
+ [[[ -60.06   -61.25     3.773 ...    5.637  -74.2    240.1  ]
+  [  55.03    -7.723  -68.3   ...  114.7     -9.74    26.11 ]
+  [   8.34   -25.67   -44.94  ...   72.94    90.44   115.5  ]
+  ...
+  [ -74.8    -45.4     38.9   ... -176.5    -62.84   -68.5  ]
+  [ -42.56   101.1     36.4   ...   11.8     54.7     76.7  ]
+  [-163.8    -48.34   -25.31  ...   76.3    -27.6   -143.   ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.8480       0.8417       0.9007       0.8002       0.0453
+Op latency: 848.02556 us, TFlops: 217.78069251591896
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 207 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 5120, 4096, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 5120, 4096, 4096)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[ -85.25     -5.26     45.47   ...   53.06    -97.2     -25.39  ]
+  [-175.        9.086   -21.9    ...   77.56    -11.625   -21.92  ]
+  [  43.34     37.78    -31.45   ...   75.1     -10.24     65.94  ]
+  ...
+  [   2.219    36.88    -77.8    ...   12.75     66.06     32.7   ]
+  [ -59.75    -43.88    -10.875  ...   10.305   -58.56    -21.12  ]
+  [ -13.336   108.8      16.52   ...  140.5      -0.1766   27.83  ]]]
+tvm:
+ [[[ -85.25     -5.26     45.47   ...   53.06    -97.2     -25.39  ]
+  [-175.        9.086   -21.9    ...   77.56    -11.625   -21.92  ]
+  [  43.34     37.78    -31.45   ...   75.1     -10.24     65.94  ]
+  ...
+  [   2.219    36.88    -77.8    ...   12.75     66.06     32.7   ]
+  [ -59.75    -43.88    -10.875  ...   10.305   -58.56    -21.12  ]
+  [ -13.336   108.8      16.52   ...  140.5      -0.1766   27.83  ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.7145       0.7017       0.7606       0.6885       0.0280
+Op latency: 714.4857099999999 us, TFlops: 240.450843782446
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 203 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 5120, 11008, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 5120, 11008, 4096)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[ 148.9     16.19   -78.6   ... -145.6     24.17    35.3  ]
+  [ 155.      43.25   152.1   ...   10.914   62.1   -129.8  ]
+  [ -78.6    136.1   -209.4   ...  143.2    265.      76.3  ]
+  ...
+  [ -62.12    59.7     73.3   ...   62.88   -24.02   274.2  ]
+  [ -47.8    -34.75   -14.56  ...  -10.87  -118.94    89.56 ]
+  [-123.6    -98.     207.    ...  -29.11   123.44   115.75 ]]]
+tvm:
+ [[[ 148.9     16.19   -78.6   ... -145.6     24.17    35.3  ]
+  [ 155.      43.25   152.1   ...   10.914   62.1   -129.8  ]
+  [ -78.6    136.1   -209.4   ...  143.2    265.      76.3  ]
+  ...
+  [ -62.12    59.7     73.3   ...   62.88   -24.02   274.2  ]
+  [ -47.8    -34.75   -14.56  ...  -10.87  -118.94    89.56 ]
+  [-123.6    -98.     207.    ...  -29.11   123.44   115.75 ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.9476       1.9242       2.0370       1.8216       0.0736
+Op latency: 1947.6376899999998 us, TFlops: 237.06102356234445
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 204 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [1, 5120, 4096, 11008]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 5120, 4096, 11008)
+<transform done>
+l2 size: 41943040
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+torch:
+ [[[-50.9    22.67   42.72  ...  32.1     0.302  77.56 ]
+  [ 93.     61.22   37.94  ...  -4.695  -4.39  -50.6  ]
+  [ 24.69  -30.     70.94  ...  28.64   -8.85  -39.6  ]
+  ...
+  [-26.86  -31.27   23.94  ...  70.25   79.4   108.75 ]
+  [-17.72  -65.4   -37.06  ... -21.86   41.06   26.52 ]
+  [ 28.61   39.97  -27.81  ...  70.3   -12.08   12.73 ]]]
+tvm:
+ [[[-50.9    22.67   42.72  ...  32.1     0.302  77.56 ]
+  [ 93.     61.22   37.94  ...  -4.695  -4.39  -50.6  ]
+  [ 24.69  -30.     70.94  ...  28.64   -8.85  -39.6  ]
+  ...
+  [-26.86  -31.27   23.94  ...  70.25   79.4   108.75 ]
+  [-17.72  -65.4   -37.06  ... -21.86   41.06   26.52 ]
+  [ 28.61   39.97  -27.81  ...  70.3   -12.08   12.73 ]]]
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   2.0621       2.1128       2.1283       1.8476       0.0971
+Op latency: 2062.12092 us, TFlops: 223.9000535041369
+<performance check done>
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'default_function_kernel' for 'sm_89'
+ptxas info    : Function properties for default_function_kernel
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 207 registers, 376 bytes cmem[0]
+<register usage check done>
+
+Testing shape: [-4, 512, 4096, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 4096, 4096)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.3194       0.3194       0.3198       0.3192       0.0002
+Op latency: 319.4060400000001 us, TFlops: 215.14770583549387
+<performance check done>
+
+Testing shape: [-4, 512, 11008, 4096]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 11008, 4096)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.9347       0.9286       0.9594       0.9207       0.0146
+Op latency: 934.7276400000001 us, TFlops: 197.58011406188865
+<performance check done>
+
+Testing shape: [-4, 512, 4096, 11008]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 4096, 11008)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.8439       0.8480       0.9063       0.7893       0.0443
+Op latency: 843.9193300000001 us, TFlops: 218.8403407325674
+<performance check done>
+
+Testing shape: [1, 512, 5120, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 5120, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.1604       0.1606       0.1608       0.1590       0.0005
+Op latency: 160.41975999999997 us, TFlops: 167.3331614509335
+<performance check done>
+
+Testing shape: [1, 512, 13824, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 13824, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.4061       0.4062       0.4064       0.4052       0.0003
+Op latency: 406.07740000000007 us, TFlops: 178.48216404064837
+<performance check done>
+
+Testing shape: [1, 512, 5120, 13824]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 5120, 13824)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.3089       0.3089       0.3094       0.3079       0.0004
+Op latency: 308.87926999999996 us, TFlops: 234.64693218162554
+<performance check done>
+
+Testing shape: [4, 512, 5120, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (4, 512, 5120, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.4462       0.4451       0.4491       0.4440       0.0022
+Op latency: 446.2489 us, TFlops: 240.61500745436012
+<performance check done>
+
+Testing shape: [4, 512, 13824, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (4, 512, 13824, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.2366       1.2636       1.2912       1.1545       0.0580
+Op latency: 1236.56188 us, TFlops: 234.448673510783
+<performance check done>
+
+Testing shape: [4, 512, 5120, 13824]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (4, 512, 5120, 13824)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.3004       1.3356       1.3620       1.1937       0.0697
+Op latency: 1300.37754 us, TFlops: 222.9431711655063
+<performance check done>
+
+Testing shape: [10, 512, 5120, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (10, 512, 5120, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.2146       1.2293       1.2571       1.1514       0.0433
+Op latency: 1214.61754 us, TFlops: 221.00409977613202
+<performance check done>
+
+Testing shape: [10, 512, 13824, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (10, 512, 13824, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   3.2797       3.3087       3.3364       3.0237       0.0916
+Op latency: 3279.6773700000003 us, TFlops: 220.98994792283483
+<performance check done>
+
+Testing shape: [10, 512, 5120, 13824]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (10, 512, 5120, 13824)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   3.3269       3.3728       3.4278       2.9905       0.1270
+Op latency: 3326.91455 us, TFlops: 217.85222322587157
+<performance check done>
+
+Testing shape: [-4, 512, 5120, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 5120, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.4474       0.4437       0.4626       0.4417       0.0077
+Op latency: 447.41629 us, TFlops: 239.9871993932094
+<performance check done>
+
+Testing shape: [-4, 512, 13824, 5120]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 13824, 5120)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.2413       1.2646       1.2959       1.1542       0.0571
+Op latency: 1241.25179 us, TFlops: 233.5628393977986
+<performance check done>
+
+Testing shape: [-4, 512, 5120, 13824]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 5120, 13824)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.2834       1.3168       1.3185       1.2057       0.0501
+Op latency: 1283.3689000000002 us, TFlops: 225.8978634124607
+<performance check done>
+
+Testing shape: [1, 512, 8192, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 8192, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.4565       0.4570       0.4576       0.4512       0.0018
+Op latency: 456.47866 us, TFlops: 150.54258338385412
+<performance check done>
+
+Testing shape: [1, 512, 28672, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 28672, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.5964       1.5969       1.5995       1.5917       0.0024
+Op latency: 1596.3545 us, TFlops: 150.66714102412718
+<performance check done>
+
+Testing shape: [1, 512, 8192, 28672]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (1, 512, 8192, 28672)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.6746       1.6758       1.6807       1.6684       0.0038
+Op latency: 1674.64957 us, TFlops: 143.62298410645997
+<performance check done>
+
+Testing shape: [4, 512, 8192, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (4, 512, 8192, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.2347       1.2662       1.2958       1.1353       0.0654
+Op latency: 1234.6981999999998 us, TFlops: 222.62760806163
+<performance check done>
+
+Testing shape: [4, 512, 28672, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (4, 512, 28672, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   4.4247       4.4549       4.5049       4.0090       0.1414
+Op latency: 4424.73466 us, TFlops: 217.43059148862045
+<performance check done>
+
+Testing shape: [4, 512, 8192, 28672]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (4, 512, 8192, 28672)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   6.1199       6.1197       6.1300       6.1107       0.0060
+Op latency: 6119.894969999999 us, TFlops: 157.2041152699717
+<performance check done>
+
+Testing shape: [10, 512, 8192, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (10, 512, 8192, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   3.0504       3.1084       3.1226       2.7133       0.1278
+Op latency: 3050.39358 us, TFlops: 225.2806889791579
+<performance check done>
+
+Testing shape: [10, 512, 28672, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (10, 512, 28672, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+  11.1479      11.1466      11.5393      10.6463       0.2039
+Op latency: 11147.929560000002 us, TFlops: 215.7514247659096
+<performance check done>
+
+Testing shape: [10, 512, 8192, 28672]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (10, 512, 8192, 28672)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+  15.6189      15.6184      15.6278      15.6066       0.0066
+Op latency: 15618.92879 us, TFlops: 153.9914624170586
+<performance check done>
+
+Testing shape: [-4, 512, 8192, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 8192, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   1.2212       1.2537       1.2733       1.1373       0.0569
+Op latency: 1221.23259 us, TFlops: 225.08235465940194
+<performance check done>
+
+Testing shape: [-4, 512, 28672, 8192]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 28672, 8192)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   4.3736       4.4556       4.4589       4.0278       0.1401
+Op latency: 4373.6473000000005 us, TFlops: 219.97033786972258
+<performance check done>
+
+Testing shape: [-4, 512, 8192, 28672]...
+Running with dtype=float16, fallback_dtype=float32
+Running with batch, shape_m, shape_k, shape_n = (-4, 512, 8192, 28672)
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   6.2280       6.2271       6.2335       6.2215       0.0035
+Op latency: 6227.9577500000005 us, TFlops: 154.47642918001492
+<performance check done>
