@@ -28,6 +28,8 @@ from tvm.relax.dpl.pattern import is_op, wildcard
 import torch
 import tvm.dlight as dl
 
+
+# configs
 check_correctness, check_performance, check_register_usage = True, True, False
 
 # batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
@@ -37,10 +39,8 @@ transpose_A, transpose_B = False, True
 if len(sys.argv) > 1:
     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
 
-
 dtype, fallback_dtype, shape_dtype = "float16", "float32", "int64"
 atol, rtol = 1e-3, 1e-3
-
 
 print(f"Running with dtype, fallback_dtype, shape_dtype = {dtype, fallback_dtype, shape_dtype}")
 print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
@@ -48,6 +48,7 @@ print(f"Running with transpose_A, transpose_B = {transpose_A, transpose_B}")
 print(f"Running with atol, rtol = {atol, rtol}")
 
 
+# handle shapes
 def handle_symbolic_shape(val, name):
     return (val, val) if val > 0 else (-val, tir.Var(name, shape_dtype))
 
@@ -57,7 +58,6 @@ shape_m, tvm_shape_m = handle_symbolic_shape(shape_m, "m")
 shape_k, tvm_shape_k = handle_symbolic_shape(shape_k, "k")
 shape_n, tvm_shape_n = handle_symbolic_shape(shape_n, "n")
 
-
 shape_1 = (batch, shape_m, shape_k)
 shape_2 = (shape_n, shape_k)
 shape_3 = (batch, shape_m, shape_n)
@@ -66,6 +66,7 @@ tvm_shape_2 = (tvm_shape_n, tvm_shape_k)
 tvm_shape_3 = (tvm_batch, tvm_shape_m, tvm_shape_n)
 
 
+# devices and paths
 # target, dev = tvm.target.Target("llvm"), tvm.cpu()
 # target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
 target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
@@ -131,6 +132,8 @@ def transform_mod(mod):
     mod = relax.transform.FuseOpsByPattern(
         [("transpose_matmul_fuse", *transpose_matmul_pattern())]
     )(mod)
+    mod.show()
+    exit()
     mod = relax.transform.LegalizeOps()(mod)
     mod = relax.transform.FuseTIR()(mod)
     mod = relax.transform.AnnotateTIROpPattern()(mod)
@@ -203,22 +206,23 @@ def fn_check_register_usage():
     print("<register usage check done>")
 
 
-# generate and build module
-mod = get_mod()
-mod = transform_mod(mod)
-ex = build_mod(mod)
+if __name__ == "__main__":
+    # generate and build module
+    mod = get_mod()
+    mod = transform_mod(mod)
+    ex = build_mod(mod)
 
-# generate inputs
-np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2, shape_3]]
-torch_inputs = [torch.tensor(x).to("cuda") for x in np_inputs[:2]]
-tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
+    # generate inputs
+    np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2, shape_3]]
+    torch_inputs = [torch.tensor(x).to("cuda") for x in np_inputs[:2]]
+    tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
 
-# run checks
-if check_correctness:
-    fn_check_correctness(ex, tvm_inputs, torch_inputs)
+    # run checks
+    if check_correctness:
+        fn_check_correctness(ex, tvm_inputs, torch_inputs)
 
-if check_performance:
-    fn_check_performance(ex, tvm_inputs)
+    if check_performance:
+        fn_check_performance(ex, tvm_inputs)
 
-if check_register_usage:
-    fn_check_register_usage()
+    if check_register_usage:
+        fn_check_register_usage()
