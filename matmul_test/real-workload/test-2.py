@@ -8,6 +8,8 @@
 import os
 import sys
 from typing import List
+
+
 import tvm
 from tvm import relax, tir, te, topi
 from tvm.dlight.gpu import fallback
@@ -27,6 +29,122 @@ from tvm.tir.schedule.schedule import Schedule
 from tvm.relax.dpl.pattern import is_op, wildcard
 import torch
 import tvm.dlight as dl
+
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(lv37: T.Buffer((T.int64(4096), T.int64(1376)), "uint32"), lv38: T.Buffer((T.int64(4096), T.int64(344)), "float16"), p_lv105: T.handle, p_lv41: T.handle, p_lv26: T.handle, p_output0: T.handle):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        n = T.int64()
+        lv105 = T.match_buffer(p_lv105, (T.int64(1), n, T.int64(11008)), "float16")
+        lv41 = T.match_buffer(p_lv41, (T.int64(1), n, T.int64(4096)), "float16")
+        lv26 = T.match_buffer(p_lv26, (T.int64(1), n, T.int64(4096)), "float16")
+        p_output0_intermediate = T.match_buffer(p_output0, (T.int64(1), n, T.int64(4096)), "float16")
+        # with T.block("root"):
+        p_output0_intermediate_1 = T.alloc_buffer((T.int64(4096), T.int64(11008)), "float16")
+        var_NT_matmul_intermediate = T.alloc_buffer((T.int64(1), n, T.int64(4096)))
+        var_compute_intermediate = T.alloc_buffer((T.int64(1), n, T.int64(4096)), "float16")
+        var_T_add_intermediate = T.alloc_buffer((T.int64(1), n, T.int64(4096)), "float16")
+        for i, j in T.grid(T.int64(4096), T.int64(11008)):
+            with T.block("decode"):
+                v_i, v_j = T.axis.remap("SS", [i, j])
+                T.reads(lv37[v_i, v_j // T.int64(8)], lv38[v_i, v_j // T.int64(32)])
+                T.writes(p_output0_intermediate_1[v_i, v_j])
+                p_output0_intermediate_1[v_i, v_j] = (T.Cast("float16", T.bitwise_and(T.shift_right(lv37[v_i, v_j // T.int64(8)], T.Cast("uint32", v_j % T.int64(8)) * T.uint32(4)), T.uint32(15))) - T.float16(7)) * lv38[v_i, v_j // T.int64(32)]
+        for i0, i1, i2, k in T.grid(T.int64(1), n, T.int64(4096), T.int64(11008)):
+            with T.block("NT_matmul"):
+                v_i0, v_i1, v_i2, v_k = T.axis.remap("SSSR", [i0, i1, i2, k])
+                T.reads(lv105[v_i0, v_i1, v_k], p_output0_intermediate_1[v_i2, v_k])
+                T.writes(var_NT_matmul_intermediate[v_i0, v_i1, v_i2])
+                with T.init():
+                    var_NT_matmul_intermediate[v_i0, v_i1, v_i2] = T.float32(0)
+                var_NT_matmul_intermediate[v_i0, v_i1, v_i2] = var_NT_matmul_intermediate[v_i0, v_i1, v_i2] + T.Cast("float32", lv105[v_i0, v_i1, v_k]) * T.Cast("float32", p_output0_intermediate_1[v_i2, v_k])
+        for i0, i1, i2 in T.grid(T.int64(1), n, T.int64(4096)):
+            with T.block("compute"):
+                v_i0, v_i1, v_i2 = T.axis.remap("SSS", [i0, i1, i2])
+                T.reads(var_NT_matmul_intermediate[v_i0, v_i1, v_i2])
+                T.writes(var_compute_intermediate[v_i0, v_i1, v_i2])
+                var_compute_intermediate[v_i0, v_i1, v_i2] = T.Cast("float16", var_NT_matmul_intermediate[v_i0, v_i1, v_i2])
+        for ax0, ax1, ax2 in T.grid(T.int64(1), n, T.int64(4096)):
+            with T.block("T_add"):
+                v_ax0, v_ax1, v_ax2 = T.axis.remap("SSS", [ax0, ax1, ax2])
+                T.reads(var_compute_intermediate[v_ax0, v_ax1, v_ax2], lv41[v_ax0, v_ax1, v_ax2])
+                T.writes(var_T_add_intermediate[v_ax0, v_ax1, v_ax2])
+                var_T_add_intermediate[v_ax0, v_ax1, v_ax2] = var_compute_intermediate[v_ax0, v_ax1, v_ax2] + lv41[v_ax0, v_ax1, v_ax2]
+        for ax0, ax1, ax2 in T.grid(T.int64(1), n, T.int64(4096)):
+            with T.block("T_add_1"):
+                v_ax0, v_ax1, v_ax2 = T.axis.remap("SSS", [ax0, ax1, ax2])
+                T.reads(lv26[v_ax0, v_ax1, v_ax2], var_T_add_intermediate[v_ax0, v_ax1, v_ax2])
+                T.writes(p_output0_intermediate[v_ax0, v_ax1, v_ax2])
+                p_output0_intermediate[v_ax0, v_ax1, v_ax2] = lv26[v_ax0, v_ax1, v_ax2] + var_T_add_intermediate[v_ax0, v_ax1, v_ax2]
+
+
+target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
+
+cur_path = os.path.dirname(os.path.abspath(__file__))
+before_path = os.path.join(cur_path, "before.py")
+after_path = os.path.join(cur_path, "after.py")
+suffix_map = {
+    "cuda": ".cu",
+    "metal": ".mtl",
+    "cpu": ".ll",
+}
+dump_path = os.path.join(cur_path, "build" + suffix_map[target.kind.default_keys[0]])
+ex_path = os.path.join(cur_path, "build" + suffix_map[target.kind.default_keys[0]] + ".so")
+cubin_path = os.path.join(cur_path, "build.cubin")
+
+
+mod = Module
+if target.kind.name == "cuda":
+    with target, tvm.transform.PassContext(trace=Trace(mod)):
+        mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulTensorizationMMA())(mod)
+        # mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.Matmul())(mod)
+
+print(mod.script(), file=open(after_path, "w"))
+print("<schedule done>")
+
+# build
+func = next(mod.functions.values())
+with tvm.transform.PassContext(config={"tir.use_async_copy": 1}):
+    ex = tvm.build(func, target=target)
+if target.kind.name == "cuda":
+    print(ex.imported_modules[0].get_source(), file=open(dump_path, "w"))
+ex.export_library(ex_path)
+    # @T.prim_func
+    # def main(lv37: T.Buffer((T.int64(4096), T.int64(1376)), "uint32"), lv38: T.Buffer((T.int64(4096), T.int64(344)), "float16"), p_lv105: T.handle, p_lv41: T.handle, p_lv26: T.handle, p_output0: T.handle):
+    #     T.func_attr({"tir.noalias": T.bool(True)})
+    #     n = T.int64()
+    #     lv105 = T.match_buffer(p_lv105, (T.int64(1), n, T.int64(11008)), "float16")
+    #     lv41 = T.match_buffer(p_lv41, (T.int64(1), n, T.int64(4096)), "float16")
+    #     lv26 = T.match_buffer(p_lv26, (T.int64(1), n, T.int64(4096)), "float16")
+    #     p_output0_intermediate = T.match_buffer(p_output0, (T.int64(1), n, T.int64(4096)), "float16")
+    #     # with T.block("root"):
+    #     p_output0_intermediate_1 = T.alloc_buffer((T.int64(4096), T.int64(11008)), "float16")
+    #     var_NT_matmul_intermediate = T.alloc_buffer((T.int64(1), n, T.int64(4096)))
+    #     var_compute_intermediate = T.alloc_buffer((T.int64(1), n, T.int64(4096)), "float16")
+    #     var_T_add_intermediate = T.alloc_buffer((T.int64(1), n, T.int64(4096)), "float16")
+
+inputs = [torch.randn(4096, 11008, dtype=torch.float16), torch.randn(1, 11008, )]
+ex(tvm_inputs_cp[0], tvm_inputs_cp[1], tvm_inputs_cp[2])
+torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+torch_res = (torch_inputs[0].T if transpose_A else torch_inputs[0]) @ (
+    torch_inputs[1].T if transpose_B else torch_inputs[1]
+)
+
+close = np.allclose(
+    torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=atol, rtol=rtol
+)
+if not close:
+    print("torch:\n", torch_res.detach().cpu().numpy())
+    print("tvm:\n", tvm_inputs[2].numpy())
+    assert close
+
+print("<correctness check done>")
+
+
+
+
 
 
 # configs
@@ -65,6 +183,8 @@ tvm_shape_1 = (tvm_batch, tvm_shape_m, tvm_shape_k)
 tvm_shape_2 = (tvm_shape_k, tvm_shape_n)
 tvm_shape_3 = (tvm_batch, tvm_shape_m, tvm_shape_n)
 
+if transpose_A:
+    shape_1[1],
 
 # devices and paths
 # target, dev = tvm.target.Target("llvm"), tvm.cpu()

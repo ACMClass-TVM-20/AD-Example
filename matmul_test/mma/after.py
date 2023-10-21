@@ -32,7 +32,7 @@ class Module:
                                 C_warp = T.match_buffer(var_matmul_intermediate_reindex_shared_dyn_warp[v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)], (T.int64(32), T.int64(8)), scope="warp", offset_factor=1)
                                 for tx in T.thread_binding(T.int64(32), thread="threadIdx.x"):
                                     T.mma_fill("float32", 8, C_warp.data, C_warp.elem_offset)
-            for ax3_0_0 in T.serial(T.int64(128), annotations={"software_pipeline_async_stages": [0], "software_pipeline_order": [0, 1, 2], "software_pipeline_stage": [0, 0, 3]}):
+            for ax3_0_0 in range(T.int64(128)):
                 for ax0_ax1_fused_0 in range(T.int64(4)):
                     for ax0_ax1_fused_1 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
                         for ax0_ax1_fused_2 in T.thread_binding(T.int64(2), thread="threadIdx.y"):
