@@ -389,6 +389,7 @@ def dequantize_param_optimize(
     param: List[tvm.nd.NDArray],
     original_shape,
     quantize_mode: GroupQuantizationSpec,
+    report: bool = False,
 ):
     orig_sinfo = relax.TensorStructInfo(original_shape, "float16")
     quantized_sinfo = quantize_mode.get_dequantize_sinfo(orig_sinfo)
@@ -411,26 +412,42 @@ def dequantize_param_optimize(
     # 113 tflops
     sch = tir.Schedule(mod["dequantize"])
     rt_blk = sch.get_block("root")
-    blk = sch.get_child_blocks(rt_blk)
-    loops = sch.get_loops(blk[0])
+    blk = sch.get_child_blocks(rt_blk)[0]
+    loops = sch.get_loops(blk)
     loop = sch.fuse(*loops)
-    v0, v1, v2, v3 = sch.split(loop, [None, 128, 4, 4])
+    v0, v1, v2, v3 = sch.split(loop, [None, 128, 2, 4])
     sch.bind(v0, "blockIdx.x")
     sch.bind(v1, "threadIdx.x")
     sch.unroll(v2)
     sch.vectorize(v3)
 
-    mod["dequantize"] = sch.mod["main"]
-    mod.show()
+    # blk1 = sch.cache_read(blk, 0, "shared.dyn")
+    # sch.compute_at(blk1, v1)
+    # blk2 = sch.cache_read(blk, 1, "local")
+    # sch.compute_at(blk2, v1)
+    # sch.annotate(v1, ann_key="software_pipeline_stage", ann_val=[0, 0, 1])
+    # sch.annotate(v1, ann_key="software_pipeline_order", ann_val=[0, 1, 2])
+    # sch.annotate(v1, ann_key="software_pipeline_async_stages", ann_val=[0])
 
-    target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
+    mod["dequantize"] = sch.mod["main"]
+    # mod.show()
+
+    # target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
+    target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
     ex = relax.build(mod, target=target)
     vm = relax.VirtualMachine(ex, dev, profile=True)
-    report = vm.profile("main", *param)
-    print(report)
+    # print(ex.mod.imported_modules[0].imported_modules[0].get_source())
+    if report:
+        report = vm.profile("main", *param)
+        print(report)
+    else:
+        return vm["main"](*param)
     # 4090:
     # 4096 * 4096: 54ms peak: 43 79%
     # 4096 * 11008: 133ms peak: 114 85%
+    # a100:
+    # 4096 * 4096: 50ms
+    # 4096 * 11008： 107ms
 
 
 if __name__ == "__main__":
@@ -464,7 +481,7 @@ if __name__ == "__main__":
     # mod = bb.get()
     # mod.show()
 
-    weight = torch.randn(4096, 4096, dtype=torch.float16)
+    weight = torch.randn(4096, 11008, dtype=torch.float16)
     weight_tvm = tvm.nd.array(weight.numpy())
     print(weight_tvm)
     quantized = quantize_param(weight_tvm, quantize_mode)
@@ -476,5 +493,6 @@ if __name__ == "__main__":
     np.set_printoptions(edgeitems=7, linewidth=180)
     print(weight_tvm.numpy() - dequantized.numpy())
 
-    dequantized_1 = dequantize_param_optimize(quantized, weight.shape, quantize_mode)
-    np.testing.assert_allclose(dequantized_1.numpy(), dequantized.numpy(), atol=1e-3)
+    dequantize_param_optimize(quantized, weight.shape, quantize_mode, True)
+    # dequantized_1 = dequantize_param_optimize(quantized, weight.shape, quantize_mode)
+    # np.testing.assert_allclose(dequantized_1.numpy(), dequantized.numpy(), atol=1e-3)
