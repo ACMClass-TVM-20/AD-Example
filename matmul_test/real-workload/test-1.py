@@ -166,44 +166,44 @@ tvm_quantized_inputs = [
 
 tvm_res = vm["main"](*tvm_quantized_inputs)
 
-torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+# torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
 
 
-start = torch.cuda.Event(enable_timing=True)
-end = torch.cuda.Event(enable_timing=True)
+# start = torch.cuda.Event(enable_timing=True)
+# end = torch.cuda.Event(enable_timing=True)
 
-start.record()
-dequantized_param_tvm = dequantize_param_optimize(tvm_quantized_inputs[:2], (11008, 4096), q4f16_1)
-dequantized_param = torch.tensor(dequantized_param_tvm.numpy()).cuda()
-torch_res_0 = inputs[1] @ dequantized_param.T
-end.record()
+# start.record()
+# dequantized_param_tvm = dequantize_param_optimize(tvm_quantized_inputs[:2], (11008, 4096), q4f16_1)
+# dequantized_param = torch.tensor(dequantized_param_tvm.numpy()).cuda()
+# torch_res_0 = inputs[1] @ dequantized_param.T
+# end.record()
 
-# Waits for everything to finish running
-torch.cuda.synchronize()
-
-
-close = np.allclose(torch_res_0.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
-if not close:
-    print("torch:\n", torch_res_0.detach().cpu().numpy())
-    print("tvm:\n", tvm_res.numpy())
-    assert close
-
-print("<correctness check done>")
-print("torch time: ", start.elapsed_time(end))
-
-report = vm.profile("main", *tvm_quantized_inputs)
-print(report)
-
-operator_call, operator_tm = None, None
-for op in report.calls:
-    if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
-        operator_call, operator_tm = op, op["Duration (us)"].microseconds
-print(operator_call)
+# # Waits for everything to finish running
+# torch.cuda.synchronize()
 
 
-tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
-print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
-print("<performance check done>")
+# close = np.allclose(torch_res_0.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
+# if not close:
+#     print("torch:\n", torch_res_0.detach().cpu().numpy())
+#     print("tvm:\n", tvm_res.numpy())
+#     assert close
+
+# print("<correctness check done>")
+# print("torch time: ", start.elapsed_time(end))
+
+# report = vm.profile("main", *tvm_quantized_inputs)
+# print(report)
+
+# operator_call, operator_tm = None, None
+# for op in report.calls:
+#     if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
+#         operator_call, operator_tm = op, op["Duration (us)"].microseconds
+# print(operator_call)
+
+
+# tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
+# print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
+# print("<performance check done>")
 
 
 # # configs

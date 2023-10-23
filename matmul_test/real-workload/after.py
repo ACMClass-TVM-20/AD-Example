@@ -37,7 +37,7 @@ class Module:
                                 C_warp = T.match_buffer(var_NT_matmul_intermediate_reindex_shared_dyn_warp[v0_o, v1_o, v2_o, T.int64(0):T.int64(32), T.int64(0):T.int64(8)], (T.int64(32), T.int64(8)), scope="warp", offset_factor=1)
                                 for tx in T.thread_binding(T.int64(32), thread="threadIdx.x"):
                                     T.mma_fill("float32", 8, C_warp.data, C_warp.elem_offset)
-            for ax3_0_0 in T.serial(T.int64(128), annotations={"software_pipeline_async_stages": [0], "software_pipeline_order": [0, 1, 2, 3, 4], "software_pipeline_stage": [0, 0, 0, 3, 3]}):
+            for ax3_0_0 in range(T.int64(128)):
                 for ax0_ax1_fused_0 in range(T.int64(4)):
                     for ax0_ax1_fused_1 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
                         for ax0_ax1_fused_2 in T.thread_binding(T.int64(2), thread="threadIdx.y"):
@@ -72,14 +72,14 @@ class Module:
                                     T.reads(lv2609[v0, v1])
                                     T.writes(lv2609_shared_dyn[v0, v1])
                                     lv2609_shared_dyn[v0, v1] = lv2609[v0, v1]
-                for ax0_ax1_fused_0 in range(T.int64(8)):
+                for ax0_ax1_fused_0 in range(T.int64(32)):
                     for ax0_ax1_fused_1 in T.thread_binding(T.int64(2), thread="threadIdx.z"):
                         for ax0_ax1_fused_2 in T.thread_binding(T.int64(2), thread="threadIdx.y"):
                             for ax0_ax1_fused_3 in T.thread_binding(T.int64(32), thread="threadIdx.x"):
-                                for ax0_ax1_fused_4 in T.vectorized(T.int64(4)):
+                                for ax0_ax1_fused_4 in T.vectorized(T.int64(1)):
                                     with T.block("p_output0_intermediate_1_reindex_reindex"):
-                                        v0 = T.axis.spatial(T.int64(11008), ax0_ax1_0_0_ax2_0_0_ax1_0_1_ax2_0_1_fused % T.int64(86) * T.int64(128) + (ax0_ax1_fused_0 * T.int64(512) + ax0_ax1_fused_1 * T.int64(256) + ax0_ax1_fused_2 * T.int64(128) + ax0_ax1_fused_3 * T.int64(4) + ax0_ax1_fused_4) // T.int64(32))
-                                        v1 = T.axis.spatial(T.int64(4096), ax3_0_0 * T.int64(32) + (ax0_ax1_fused_0 * T.int64(512) + ax0_ax1_fused_1 * T.int64(256) + ax0_ax1_fused_2 * T.int64(128) + ax0_ax1_fused_3 * T.int64(4) + ax0_ax1_fused_4) % T.int64(32))
+                                        v0 = T.axis.spatial(T.int64(11008), ax0_ax1_0_0_ax2_0_0_ax1_0_1_ax2_0_1_fused % T.int64(86) * T.int64(128) + (ax0_ax1_fused_0 * T.int64(128) + ax0_ax1_fused_1 * T.int64(64) + ax0_ax1_fused_2 * T.int64(32) + ax0_ax1_fused_3 + ax0_ax1_fused_4) // T.int64(32))
+                                        v1 = T.axis.spatial(T.int64(4096), ax3_0_0 * T.int64(32) + (ax0_ax1_fused_0 * T.int64(128) + ax0_ax1_fused_1 * T.int64(64) + ax0_ax1_fused_2 * T.int64(32) + ax0_ax1_fused_3 + ax0_ax1_fused_4) % T.int64(32))
                                         T.reads(lv2608_shared_dyn[v0, v1 // T.int64(8)], lv2609_shared_dyn[v0, v1 // T.int64(32)])
                                         T.writes(p_output0_intermediate_1_reindex_shared_dyn[T.int64(0), v0, v1])
                                         T.block_attr({"permuted_layout": "g2s_B"})

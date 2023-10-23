@@ -778,3 +778,11 @@ Execution time summary:
    6.2280       6.2271       6.2335       6.2215       0.0035
 Op latency: 6227.9577500000005 us, TFlops: 154.47642918001492
 <performance check done>
+
+
+
+fuse dequantize Matmul
+4*512*4096 @ 11008*4096.T
+q4f16_1
+1. dummy two block: 840 + 100 = 940
+2. compute inline for dequantize: 1679
