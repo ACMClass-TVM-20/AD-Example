@@ -1,9 +1,17 @@
-"""Test: fp16 mixed precision matmul mma
-- Without unroll: 99.60745695626359
-    - 208 regs
-- With unroll: 144.07358026271964
-- With pipeline: 96.57410868904708
-    - 167 regs
+"""b=4
+A100: 868.351 us
+ Time (%)  Total Time (ns)  Instances  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)                                                 Name
+ --------  ---------------  ---------  --------  --------  --------  --------  -----------  --------------------------------------------------------------------------------------------------
+     69.5          2426413          3  808804.3  808666.0    807833    809914       1047.4  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel_1
+     20.6           718778          1  718778.0  718778.0    718778    718778          0.0  sm80_xmma_gemm_f16f16_f16f32_f32_tn_n_tilesize192x128x32_stage3_warpsize4x2x1_tensor16x8x16_kernel
+      7.5           262560          3   87520.0   86272.0     84064     92224       4220.7  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel
+      2.4            84575          1   84575.0   84575.0     84575     84575          0.0  dequantize_kernel
+b=1
+ --------  ---------------  ---------  --------  --------  --------  --------  -----------  ----------------------------------------------------------------------------------------------------
+     56.4           724442          3  241480.7  240671.0    240669    243102       1404.1  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel_1
+     20.4           262525          3   87508.3   87103.0     84063     91359       3664.8  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel
+     16.5           212191          1  212191.0  212191.0    212191    212191          0.0  void cutlass::Kernel<cutlass_80_tensorop_f16_s16816gemm_relu_f16_128x128_32x5_tn_align8>(T1::Params)
+      6.6            85279          1   85279.0   85279.0     85279     85279          0.0  dequantize_kernel
 """
 import os
 import sys
@@ -37,6 +45,11 @@ import os
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 from dequantization.quantize import quantize_param, dequantize_param_optimize, q3f16_1, q4f16_1
+
+
+def flush():
+    cache = torch.empty(int(256e6), dtype=torch.int8, device="cuda")
+    cache.zero_()
 
 
 @I.ir_module
@@ -95,9 +108,6 @@ class Module:
                     "float16", var_NT_matmul_intermediate[v_i0, v_i1, v_i2]
                 )
 
-    # lv2608: T.Buffer((T.int64(11008), T.int64(512)), "uint32"),
-    #         lv2609: T.Buffer((T.int64(11008), T.int64(128)), "float16"),
-    #     lv7330 = T.match_buffer(p_lv7330, (b, T.int64(512), T.int64(4096)), "float16")
     @R.function
     def main(
         w1: R.Tensor((11008, 512), "uint32"),
@@ -168,18 +178,9 @@ tvm_res = vm["main"](*tvm_quantized_inputs)
 
 torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
 
-
-start = torch.cuda.Event(enable_timing=True)
-end = torch.cuda.Event(enable_timing=True)
-
-start.record()
 dequantized_param_tvm = dequantize_param_optimize(tvm_quantized_inputs[:2], (11008, 4096), q4f16_1)
 dequantized_param = torch.tensor(dequantized_param_tvm.numpy()).cuda()
 torch_res_0 = inputs[1] @ dequantized_param.T
-end.record()
-
-# Waits for everything to finish running
-torch.cuda.synchronize()
 
 
 close = np.allclose(torch_res_0.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
@@ -189,228 +190,17 @@ if not close:
     assert close
 
 print("<correctness check done>")
-print("torch time: ", start.elapsed_time(end))
 
-report = vm.profile("main", *tvm_quantized_inputs)
-print(report)
+# report = vm.profile("main", *tvm_quantized_inputs)
+# print(report)
 
-operator_call, operator_tm = None, None
-for op in report.calls:
-    if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
-        operator_call, operator_tm = op, op["Duration (us)"].microseconds
-print(operator_call)
-
-
-tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
-print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
-print("<performance check done>")
+# operator_call, operator_tm = None, None
+# for op in report.calls:
+#     if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
+#         operator_call, operator_tm = op, op["Duration (us)"].microseconds
+# print(operator_call)
 
 
-# # configs
-# check_correctness, check_performance, check_register_usage = True, True, False
-
-# # batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
-# batch, shape_m, shape_k, shape_n = 4, 511, 4096, 4094
-# transpose_A, transpose_B = False, False
-
-# if len(sys.argv) > 1:
-#     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
-
-# dtype, fallback_dtype, shape_dtype = "float16", "float32", "int64"
-
-# print(f"Running with dtype, fallback_dtype, shape_dtype = {dtype, fallback_dtype, shape_dtype}")
-# print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
-# print(f"Running with transpose_A, transpose_B = {transpose_A, transpose_B}")
-# print(f"Running with atol, rtol = {atol, rtol}")
-
-
-# # handle shapes
-# def handle_symbolic_shape(val, name):
-#     return (val, val) if val > 0 else (-val, tir.Var(name, shape_dtype))
-
-
-# batch, tvm_batch = handle_symbolic_shape(batch, "batch")
-# shape_m, tvm_shape_m = handle_symbolic_shape(shape_m, "m")
-# shape_k, tvm_shape_k = handle_symbolic_shape(shape_k, "k")
-# shape_n, tvm_shape_n = handle_symbolic_shape(shape_n, "n")
-
-# shape_1 = (batch, shape_m, shape_k)
-# shape_2 = (shape_k, shape_n)
-# shape_3 = (batch, shape_m, shape_n)
-# tvm_shape_1 = (tvm_batch, tvm_shape_m, tvm_shape_k)
-# tvm_shape_2 = (tvm_shape_k, tvm_shape_n)
-# tvm_shape_3 = (tvm_batch, tvm_shape_m, tvm_shape_n)
-
-# if transpose_A:
-#     shape_1[1],
-
-# # devices and paths
-# # target, dev = tvm.target.Target("llvm"), tvm.cpu()
-# # target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
-# target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
-
-# cur_path = os.path.dirname(os.path.abspath(__file__))
-# before_path = os.path.join(cur_path, "before.py")
-# after_path = os.path.join(cur_path, "after.py")
-# suffix_map = {
-#     "cuda": ".cu",
-#     "metal": ".mtl",
-#     "cpu": ".ll",
-# }
-# dump_path = os.path.join(cur_path, "build" + suffix_map[target.kind.default_keys[0]])
-# ex_path = os.path.join(cur_path, "build" + suffix_map[target.kind.default_keys[0]] + ".so")
-# cubin_path = os.path.join(cur_path, "build.cubin")
-
-
-# def get_mod():
-#     def transpose_if(var, cond):
-#         return R.permute_dims(var) if cond else var
-
-#     A = relax.Var("A", relax.TensorStructInfo(tvm_shape_1, dtype))
-#     B = relax.Var("B", relax.TensorStructInfo(tvm_shape_2, dtype))
-#     bb = BlockBuilder()
-#     with bb.function("main", [A, B]):
-#         with bb.dataflow():
-#             lv = bb.emit(
-#                 relax.op.matmul(
-#                     transpose_if(A, transpose_A),
-#                     transpose_if(B, transpose_B),
-#                     out_dtype=fallback_dtype,
-#                 )
-#             )
-#             gv = bb.emit_output(relax.op.astype(lv, dtype))
-#         bb.emit_func_output(gv)
-
-#     mod = bb.get()
-#     mod.show(None, False)
-#     return mod
-
-
-# def transform_mod(mod):
-#     def transpose_matmul_pattern():
-#         w = wildcard()
-#         x = wildcard()
-#         wT = is_op("relax.permute_dims")(w)
-#         o = is_op("relax.matmul")(x, wT)
-#         annotations = {"o": o, "w": w, "x": x, "wT": wT}
-
-#         def _check(context: relax.transform.PatternCheckContext) -> bool:
-#             transpose_call = context.annotated_expr["wT"]
-#             ndim = transpose_call.args[0].struct_info.ndim
-#             if ndim == -1:
-#                 return False
-#             if ndim == 2 and transpose_call.attrs.axes is None:
-#                 return True
-#             axes = list(range(ndim))
-#             axes[-1], axes[-2] = axes[-2], axes[-1]
-#             return list(transpose_call.attrs.axes) == axes
-
-#         return o, annotations, _check
-
-#     mod = relax.transform.FuseOpsByPattern(
-#         [("transpose_matmul_fuse", *transpose_matmul_pattern())]
-#     )(mod)
-#     mod = relax.transform.LegalizeOps()(mod)
-#     mod = relax.transform.FuseTIR()(mod)
-#     mod = relax.transform.AnnotateTIROpPattern()(mod)
-#     mod = relax.transform.FuseOps()(mod)
-#     mod = relax.transform.FuseTIR()(mod)
-
-#     print(mod.script(), file=open(before_path, "w"))
-#     print("<transform done>")
-#     return mod
-
-
-# def build_mod(mod):
-#     if target.kind.name == "cuda":
-#         with target, tvm.transform.PassContext(trace=Trace(mod)):
-#             mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulTensorizationMMA())(mod)
-#             # mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.Matmul())(mod)
-
-#     print(mod.script(), file=open(after_path, "w"))
-#     print("<schedule done>")
-
-#     # build
-#     func = next(mod.functions.values())
-#     with tvm.transform.PassContext(config={"tir.use_async_copy": 1}):
-#         ex = tvm.build(func, target=target)
-#     if target.kind.name == "cuda":
-#         print(ex.imported_modules[0].get_source(), file=open(dump_path, "w"))
-#     ex.export_library(ex_path)
-#     print("<build done>")
-#     return ex
-
-
-# # Step 1. check correctness
-# def fn_check_correctness(
-#     ex: tvm.runtime.Module, tvm_inputs: List[tvm.runtime.NDArray], torch_inputs: List[torch.Tensor]
-# ):
-#     tvm_inputs_cp = tvm_inputs
-#     # tvm_inputs_cp = list(tvm_inputs)
-#     # if transpose_A is False and transpose_B is True:
-#     #     # swap a and b because the place of the params are swapped by FuseOpsByPattern pass
-#     #     tvm_inputs_cp[0], tvm_inputs_cp[1] = tvm_inputs_cp[1], tvm_inputs_cp[0]
-
-#     ex(tvm_inputs_cp[0], tvm_inputs_cp[1], tvm_inputs_cp[2])
-#     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-#     torch_res = (torch_inputs[0].T if transpose_A else torch_inputs[0]) @ (
-#         torch_inputs[1].T if transpose_B else torch_inputs[1]
-#     )
-
-#     close = np.allclose(
-#         torch_res.detach().cpu().numpy(), tvm_inputs[2].numpy(), atol=atol, rtol=rtol
-#     )
-#     if not close:
-#         print("torch:\n", torch_res.detach().cpu().numpy())
-#         print("tvm:\n", tvm_inputs[2].numpy())
-#         assert close
-
-#     print("<correctness check done>")
-
-
-# # Step 2. check performance
-# def fn_check_performance(ex: tvm.runtime.Module, tvm_inputs: List[tvm.runtime.NDArray]):
-#     eval = ex.time_evaluator(ex.entry_name, dev, 10, 10)
-
-#     tvm_inputs_cp = list(tvm_inputs)
-#     if transpose_A is False and transpose_B is True:
-#         # swap a and b because the place of the params are swapped by FuseOpsByPattern pass
-#         tvm_inputs_cp[0], tvm_inputs_cp[1] = tvm_inputs_cp[1], tvm_inputs_cp[0]
-
-#     report = eval(tvm_inputs_cp[0], tvm_inputs_cp[1], tvm_inputs_cp[2])
-#     print(report)
-
-#     op_time = report.mean
-#     tflops = batch * shape_m * shape_n * shape_k * 2 / op_time / 1e12
-#     print(f"Op latency: {op_time*1e6} us, TFlops: {tflops}")
-#     print("<performance check done>")
-
-
-# # Step 3. check register usage
-# def fn_check_register_usage():
-#     os.system(
-#         f"nvcc -maxrregcount=255 -arch=sm_89 --cubin -w -Xptxas -v {dump_path} -o {cubin_path}"
-#     )
-#     print("<register usage check done>")
-
-
-# if __name__ == "__main__":
-#     # generate and build module
-#     mod = get_mod()
-#     mod = transform_mod(mod)
-#     ex = build_mod(mod)
-
-#     # generate inputs
-#     np_inputs = [np.random.normal(size=size).astype(dtype) for size in [shape_1, shape_2, shape_3]]
-#     torch_inputs = [torch.tensor(x).to("cuda") for x in np_inputs[:2]]
-#     tvm_inputs = [tvm.nd.array(x, dev) for x in np_inputs]
-
-#     # run checks
-#     if check_correctness:
-#         fn_check_correctness(ex, tvm_inputs, torch_inputs)
-
-#     if check_performance:
-#         fn_check_performance(ex, tvm_inputs)
-
-#     if check_register_usage:
-#         fn_check_register_usage()
+# tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
+# print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
+# print("<performance check done>")

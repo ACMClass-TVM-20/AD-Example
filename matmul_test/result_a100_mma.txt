@@ -779,7 +779,67 @@ Execution time summary:
 Op latency: 6227.9577500000005 us, TFlops: 154.47642918001492
 <performance check done>
 
+Running with batch, shape_m, shape_k, shape_n = (1, -512, 4096, 4096)
+Running with transpose_A, transpose_B = (False, True)
+Running with atol, rtol = (0.001, 0.001)
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+# from tvm.script import relax as R
 
+@I.ir_module
+class Module:
+    @R.function
+    def main(A: R.Tensor((1, "m", 4096), dtype="float16"), B: R.Tensor((4096, 4096), dtype="float16")) -> R.Tensor((1, "m", 4096), dtype="float16"):
+        m = T.int64()
+        with R.dataflow():
+            lv: R.Tensor((4096, 4096), dtype="float16") = R.permute_dims(B, axes=None)
+            lv1: R.Tensor((1, m, 4096), dtype="float32") = R.matmul(A, lv, out_dtype="float32")
+            gv: R.Tensor((1, m, 4096), dtype="float16") = R.astype(lv1, dtype="float16")
+            R.output(gv)
+        return gv
+
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.1308       0.1308       0.1325       0.1299       0.0007
+Op latency: 130.82618 us, TFlops: 131.31828189128507
+<performance check done>
+
+Testing shape: [1, -1024, 11008, 4096]...
+Running with dtype, fallback_dtype, shape_dtype = ('float16', 'float32', 'int64')
+Running with batch, shape_m, shape_k, shape_n = (1, -1024, 11008, 4096)
+Running with transpose_A, transpose_B = (False, True)
+Running with atol, rtol = (0.001, 0.001)
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+# from tvm.script import relax as R
+
+@I.ir_module
+class Module:
+    @R.function
+    def main(A: R.Tensor((1, "m", 11008), dtype="float16"), B: R.Tensor((4096, 11008), dtype="float16")) -> R.Tensor((1, "m", 4096), dtype="float16"):
+        m = T.int64()
+        with R.dataflow():
+            lv: R.Tensor((11008, 4096), dtype="float16") = R.permute_dims(B, axes=None)
+            lv1: R.Tensor((1, m, 4096), dtype="float32") = R.matmul(A, lv, out_dtype="float32")
+            gv: R.Tensor((1, m, 4096), dtype="float16") = R.astype(lv1, dtype="float16")
+            R.output(gv)
+        return gv
+
+<transform done>
+z_order_factor_m=[1, None], z_order_factor_n=[1, None]
+<schedule done>
+<build done>
+<correctness check done>
+Execution time summary:
+ mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)
+   0.5486       0.5484       0.5509       0.5481       0.0008
+Op latency: 548.5772400000001 us, TFlops: 168.32961729145012
+<performance check done>
 
 fuse dequantize Matmul
 4*512*4096 @ 11008*4096.T

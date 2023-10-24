@@ -340,14 +340,14 @@ cast_smem_ptr_to_int(const void* const smem_ptr)
   #define int64_t long long
   #define uint64_t unsigned long long
 #endif
-extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel(uint* __restrict__ lv2608, half* __restrict__ lv2609, half* __restrict__ p_output0_intermediate_1) {
+extern "C" __global__ void __launch_bounds__(128) fused_fused_decode4_transpose5_fused_NT_matmul21_cast21_kernel(uint* __restrict__ lv4075, half* __restrict__ lv4076, half* __restrict__ var_decode_intermediate) {
   extern __shared__ uchar buf_dyn_shmem[];
   uint2 __1;
     uint2 __2;
       uint2 __3;
       uint4 __4;
         uint4 __5;
-          uint4 v_ = make_uint4(lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))]);
+          uint4 v_ = make_uint4(lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))]);
           uint4 v__1 = make_uint4(((uint)0)+((uint)4*0), ((uint)0)+((uint)4*1), ((uint)0)+((uint)4*2), ((uint)0)+((uint)4*3));
           __5.x = (v_.x >> v__1.x);
           __5.y = (v_.y >> v__1.y);
@@ -367,18 +367,18 @@ extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_m
       ((half2*)(&(__2.x)))->y = (((half2*)(&(__3.x)))->y-((half2*)(&(v__3.x)))->y);
       ((half2*)(&(__2.y)))->x = (((half2*)(&(__3.y)))->x-((half2*)(&(v__3.y)))->x);
       ((half2*)(&(__2.y)))->y = (((half2*)(&(__3.y)))->y-((half2*)(&(v__3.y)))->y);
-    uint2 v__4 = make_uint2(__pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]), __pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]));
+    uint2 v__4 = make_uint2(__pack_half2(lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]), __pack_half2(lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]));
     ((half2*)(&(__1.x)))->x = (((half2*)(&(__2.x)))->x*((half2*)(&(v__4.x)))->x);
     ((half2*)(&(__1.x)))->y = (((half2*)(&(__2.x)))->y*((half2*)(&(v__4.x)))->y);
     ((half2*)(&(__1.y)))->x = (((half2*)(&(__2.y)))->x*((half2*)(&(v__4.y)))->x);
     ((half2*)(&(__1.y)))->y = (((half2*)(&(__2.y)))->y*((half2*)(&(v__4.y)))->y);
-  *(uint2*)(p_output0_intermediate_1 + ((((int)blockIdx.x) * 1024) + (((int)threadIdx.x) * 8))) = __1;
+  *(uint2*)(var_decode_intermediate + ((((int)blockIdx.x) * 1024) + (((int)threadIdx.x) * 8))) = __1;
   uint2 __6;
     uint2 __7;
       uint2 __8;
       uint4 __9;
         uint4 __10;
-          uint4 v__5 = make_uint4(lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))]);
+          uint4 v__5 = make_uint4(lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv4075[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))]);
           uint4 v__6 = make_uint4(((uint)16)+((uint)4*0), ((uint)16)+((uint)4*1), ((uint)16)+((uint)4*2), ((uint)16)+((uint)4*3));
           __10.x = (v__5.x >> v__6.x);
           __10.y = (v__5.y >> v__6.y);
@@ -398,20 +398,20 @@ extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_m
       ((half2*)(&(__7.x)))->y = (((half2*)(&(__8.x)))->y-((half2*)(&(v__8.x)))->y);
       ((half2*)(&(__7.y)))->x = (((half2*)(&(__8.y)))->x-((half2*)(&(v__8.y)))->x);
       ((half2*)(&(__7.y)))->y = (((half2*)(&(__8.y)))->y-((half2*)(&(v__8.y)))->y);
-    uint2 v__9 = make_uint2(__pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]), __pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]));
+    uint2 v__9 = make_uint2(__pack_half2(lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]), __pack_half2(lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv4076[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]));
     ((half2*)(&(__6.x)))->x = (((half2*)(&(__7.x)))->x*((half2*)(&(v__9.x)))->x);
     ((half2*)(&(__6.x)))->y = (((half2*)(&(__7.x)))->y*((half2*)(&(v__9.x)))->y);
     ((half2*)(&(__6.y)))->x = (((half2*)(&(__7.y)))->x*((half2*)(&(v__9.y)))->x);
     ((half2*)(&(__6.y)))->y = (((half2*)(&(__7.y)))->y*((half2*)(&(v__9.y)))->y);
-  *(uint2*)(p_output0_intermediate_1 + (((((int)blockIdx.x) * 1024) + (((int)threadIdx.x) * 8)) + 4)) = __6;
+  *(uint2*)(var_decode_intermediate + (((((int)blockIdx.x) * 1024) + (((int)threadIdx.x) * 8)) + 4)) = __6;
 }
 
-extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel_1(half* __restrict__ lv7330, half* __restrict__ p_output0_intermediate, half* __restrict__ p_output0_intermediate_1, int64_t b) {
+extern "C" __global__ void __launch_bounds__(128) fused_fused_decode4_transpose5_fused_NT_matmul21_cast21_kernel_1(half* __restrict__ lv10517_adjoint, half* __restrict__ p_output0_intermediate, half* __restrict__ var_decode_intermediate, int64_t b) {
   extern __shared__ uchar buf_dyn_shmem[];
   float var_NT_matmul_intermediate_reindex_shared_dyn_warp[128];
-  half lv7330_reindex_shared_dyn_warp[32];
+  half lv10517_adjoint_reindex_shared_dyn_warp[32];
   half p_output0_intermediate_1_reindex_shared_dyn_warp[32];
-  half lv7330_reindex_shared_dyn_warp_1[32];
+  half lv10517_adjoint_reindex_shared_dyn_warp_1[32];
   half p_output0_intermediate_1_reindex_shared_dyn_warp_1[32];
   for (int ax1_0_3_init = 0; ax1_0_3_init < 4; ++ax1_0_3_init) {
     for (int ax2_0_3_init = 0; ax2_0_3_init < 4; ++ax2_0_3_init) {
@@ -430,7 +430,7 @@ var_NT_matmul_intermediate_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(lv7330 + (((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)))), "n"(16)
+        :: "r"(addr), "l"((void*)(lv10517_adjoint + (((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)))), "n"(16)
     );
   }
   }
@@ -444,7 +444,7 @@ var_NT_matmul_intermediate_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(p_output0_intermediate_1 + (((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_1 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)))), "n"(16)
+        :: "r"(addr), "l"((void*)(var_decode_intermediate + (((((((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)88064) + ((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)128)) + (ax0_ax1_fused_0_1 * (int64_t)32)) + (((int64_t)threadIdx.z) * (int64_t)16)) + (((int64_t)threadIdx.y) * (int64_t)8)) + (((int64_t)threadIdx.x) >> (int64_t)2)))), "n"(16)
     );
   }
   }
@@ -460,7 +460,7 @@ __asm__ __volatile__("cp.async.commit_group;");
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(lv7330 + ((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_2 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)32))), "n"(16)
+        :: "r"(addr), "l"((void*)(lv10517_adjoint + ((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_2 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)32))), "n"(16)
     );
   }
   }
@@ -474,7 +474,7 @@ __asm__ __volatile__("cp.async.commit_group;");
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(p_output0_intermediate_1 + ((((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_3 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)32))), "n"(16)
+        :: "r"(addr), "l"((void*)(var_decode_intermediate + ((((((((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)88064) + ((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)128)) + (ax0_ax1_fused_0_3 * (int64_t)32)) + (((int64_t)threadIdx.z) * (int64_t)16)) + (((int64_t)threadIdx.y) * (int64_t)8)) + (((int64_t)threadIdx.x) >> (int64_t)2)) + (int64_t)352256))), "n"(16)
     );
   }
   }
@@ -490,7 +490,7 @@ __asm__ __volatile__("cp.async.commit_group;");
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(lv7330 + ((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_4 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)64))), "n"(16)
+        :: "r"(addr), "l"((void*)(lv10517_adjoint + ((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_4 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)64))), "n"(16)
     );
   }
   }
@@ -504,7 +504,7 @@ __asm__ __volatile__("cp.async.commit_group;");
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(p_output0_intermediate_1 + ((((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_5 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)64))), "n"(16)
+        :: "r"(addr), "l"((void*)(var_decode_intermediate + ((((((((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)88064) + ((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)128)) + (ax0_ax1_fused_0_5 * (int64_t)32)) + (((int64_t)threadIdx.z) * (int64_t)16)) + (((int64_t)threadIdx.y) * (int64_t)8)) + (((int64_t)threadIdx.x) >> (int64_t)2)) + (int64_t)704512))), "n"(16)
     );
   }
   }
@@ -522,7 +522,7 @@ __asm__ __volatile__("cp.async.commit_group;");
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(lv7330 + (((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_6 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)96))), "n"(16)
+        :: "r"(addr), "l"((void*)(lv10517_adjoint + (((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_6 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)96))), "n"(16)
     );
   }
     }
@@ -536,7 +536,7 @@ __asm__ __volatile__("cp.async.commit_group;");
       #else
         "cp.async.cg.shared.global [%0], [%1], %2;"
       #endif
-        :: "r"(addr), "l"((void*)(p_output0_intermediate_1 + (((((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_7 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)) + (int64_t)96))), "n"(16)
+        :: "r"(addr), "l"((void*)(var_decode_intermediate + ((((((((ax3_0_0 * (int64_t)352256) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)88064)) + ((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)128)) + (ax0_ax1_fused_0_7 * (int64_t)32)) + (((int64_t)threadIdx.z) * (int64_t)16)) + (((int64_t)threadIdx.y) * (int64_t)8)) + (((int64_t)threadIdx.x) >> (int64_t)2)) + (int64_t)1056768))), "n"(16)
     );
   }
     }
@@ -553,7 +553,7 @@ __asm__ __volatile__("cp.async.wait_group 3;");
     __asm__ __volatile__(
       "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
       "{%0, %1, %2, %3}, [%4];\n"
-      : "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[3])
+      : "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (ax0_0 * (int64_t)8)))[3])
       : "r"(addr)
     );
   }
@@ -578,7 +578,7 @@ __asm__ __volatile__("cp.async.wait_group 3;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + (((int64_t)ax2_0_3) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + (((int64_t)ax2_0_3) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + (((int64_t)ax2_0_3) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + (((int64_t)ax2_0_3) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8))))[3]));
   }
 
   {
@@ -586,7 +586,7 @@ __asm__ __volatile__("cp.async.wait_group 3;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + ((((int64_t)ax2_0_3) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + ((((int64_t)ax2_0_3) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp + (((int64_t)ax1_0_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + ((((int64_t)ax2_0_3) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp + ((((int64_t)ax2_0_3) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3) * (int64_t)32) + (((int64_t)ax2_0_3) * (int64_t)8)) + (int64_t)4)))[3]));
   }
         }
       }
@@ -603,7 +603,7 @@ __asm__ __volatile__("cp.async.wait_group 2;");
     __asm__ __volatile__(
       "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
       "{%0, %1, %2, %3}, [%4];\n"
-      : "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[3])
+      : "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_2 * (int64_t)8)))[3])
       : "r"(addr)
     );
   }
@@ -628,7 +628,7 @@ __asm__ __volatile__("cp.async.wait_group 2;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_1) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_1) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8))))[3]));
   }
 
   {
@@ -636,7 +636,7 @@ __asm__ __volatile__("cp.async.wait_group 2;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_1) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_1) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_1) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_1) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_1) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_1) * (int64_t)32) + (((int64_t)ax2_0_3_1) * (int64_t)8)) + (int64_t)4)))[3]));
   }
       }
     }
@@ -652,7 +652,7 @@ __asm__ __volatile__("cp.async.wait_group 1;");
     __asm__ __volatile__(
       "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
       "{%0, %1, %2, %3}, [%4];\n"
-      : "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[3])
+      : "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_4 * (int64_t)8)))[3])
       : "r"(addr)
     );
   }
@@ -677,7 +677,7 @@ __asm__ __volatile__("cp.async.wait_group 1;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_2) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_2) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8))))[3]));
   }
 
   {
@@ -685,7 +685,7 @@ __asm__ __volatile__("cp.async.wait_group 1;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_2) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_2) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_2) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_2) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_2) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_2) * (int64_t)32) + (((int64_t)ax2_0_3_2) * (int64_t)8)) + (int64_t)4)))[3]));
   }
       }
     }
@@ -701,7 +701,7 @@ __asm__ __volatile__("cp.async.wait_group 0;");
     __asm__ __volatile__(
       "ldmatrix.sync.aligned.m8n8.x4.shared.b16"
       "{%0, %1, %2, %3}, [%4];\n"
-      : "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[3])
+      : "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[0]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[1]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[2]), "=r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (ax0_0_6 * (int64_t)8)))[3])
       : "r"(addr)
     );
   }
@@ -726,7 +726,7 @@ __asm__ __volatile__("cp.async.wait_group 0;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_3) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + (((int64_t)ax2_0_3_3) * (int64_t)8)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + ((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8))))[3]));
   }
 
   {
@@ -734,7 +734,7 @@ __asm__ __volatile__("cp.async.wait_group 0;");
       "mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32"
       "{%0, %1, %2, %3}, {%4, %5, %6, %7}, {%8, %9}, {%10, %11, %12, %13};\n"
       :  "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[0]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[1]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[2]), "=f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[3])
-      : "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv7330_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_3) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_3) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[3]));
+      : "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[0]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[1]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[2]), "r"(((unsigned *)(lv10517_adjoint_reindex_shared_dyn_warp_1 + (((int64_t)ax1_0_3_3) * (int64_t)8)))[3]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_3) * (int64_t)8) + (int64_t)4)))[0]), "r"(((unsigned *)(p_output0_intermediate_1_reindex_shared_dyn_warp_1 + ((((int64_t)ax2_0_3_3) * (int64_t)8) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[0]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[1]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[2]), "f"(((float *)(var_NT_matmul_intermediate_reindex_shared_dyn_warp + (((((int64_t)ax1_0_3_3) * (int64_t)32) + (((int64_t)ax2_0_3_3) * (int64_t)8)) + (int64_t)4)))[3]));
   }
       }
     }

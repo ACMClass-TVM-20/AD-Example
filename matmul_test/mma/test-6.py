@@ -33,8 +33,8 @@ import tvm.dlight as dl
 check_correctness, check_performance, check_register_usage = True, True, False
 
 # batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
-batch, shape_m, shape_k, shape_n = 4, 511, 4096, 4094
-transpose_A, transpose_B = False, False
+batch, shape_m, shape_k, shape_n = 1, -512, 4096, 4096
+transpose_A, transpose_B = False, True
 
 if len(sys.argv) > 1:
     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
@@ -65,6 +65,12 @@ tvm_shape_1 = (tvm_batch, tvm_shape_m, tvm_shape_k)
 tvm_shape_2 = (tvm_shape_k, tvm_shape_n)
 tvm_shape_3 = (tvm_batch, tvm_shape_m, tvm_shape_n)
 
+if transpose_A:
+    shape_1 = (shape_1[0], shape_1[2], shape_1[1])
+    tvm_shape_1 = (tvm_shape_1[0], tvm_shape_1[2], tvm_shape_1[1])
+if transpose_B:
+    shape_2 = (shape_2[1], shape_2[0])
+    tvm_shape_2 = (tvm_shape_2[1], tvm_shape_2[0])
 
 # devices and paths
 # target, dev = tvm.target.Target("llvm"), tvm.cpu()
@@ -167,13 +173,11 @@ def build_mod(mod):
 def fn_check_correctness(
     ex: tvm.runtime.Module, tvm_inputs: List[tvm.runtime.NDArray], torch_inputs: List[torch.Tensor]
 ):
-    tvm_inputs_cp = tvm_inputs
-    # tvm_inputs_cp = list(tvm_inputs)
-    # if transpose_A is False and transpose_B is True:
-    #     # swap a and b because the place of the params are swapped by FuseOpsByPattern pass
-    #     tvm_inputs_cp[0], tvm_inputs_cp[1] = tvm_inputs_cp[1], tvm_inputs_cp[0]
+    if transpose_A is False and transpose_B is True:
+        # swap a and b because the place of the params are swapped by FuseOpsByPattern pass
+        tvm_inputs = [tvm_inputs[1], tvm_inputs[0], tvm_inputs[2]]
 
-    ex(tvm_inputs_cp[0], tvm_inputs_cp[1], tvm_inputs_cp[2])
+    ex(tvm_inputs[0], tvm_inputs[1], tvm_inputs[2])
     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
     torch_res = (torch_inputs[0].T if transpose_A else torch_inputs[0]) @ (
         torch_inputs[1].T if transpose_B else torch_inputs[1]
@@ -194,12 +198,11 @@ def fn_check_correctness(
 def fn_check_performance(ex: tvm.runtime.Module, tvm_inputs: List[tvm.runtime.NDArray]):
     eval = ex.time_evaluator(ex.entry_name, dev, 10, 10)
 
-    tvm_inputs_cp = list(tvm_inputs)
     if transpose_A is False and transpose_B is True:
         # swap a and b because the place of the params are swapped by FuseOpsByPattern pass
-        tvm_inputs_cp[0], tvm_inputs_cp[1] = tvm_inputs_cp[1], tvm_inputs_cp[0]
+        tvm_inputs = [tvm_inputs[1], tvm_inputs[0], tvm_inputs[2]]
 
-    report = eval(tvm_inputs_cp[0], tvm_inputs_cp[1], tvm_inputs_cp[2])
+    report = eval(tvm_inputs[0], tvm_inputs[1], tvm_inputs[2])
     print(report)
 
     op_time = report.mean
