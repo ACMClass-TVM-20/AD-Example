@@ -8,3 +8,6 @@ exec.so
 *.so
 *.o
 *.cubin
+build
+dist
+*.egg-info

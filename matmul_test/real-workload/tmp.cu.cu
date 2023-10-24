@@ -3,8 +3,7 @@ for (int64_t ax0_ax1_fused_0_1 = 0; ax0_ax1_fused_0_1 < 32; ++ax0_ax1_fused_0_1)
   ((half*)
        buf_dyn_shmem)[ax0_ax1_fused_0_1 * 128 + threadIdx.z * 64 + threadIdx.y * 32 +
                           ((threadIdx.x >> 3) ^ ((ax0_ax1_fused_0_1 & 1) * 2 + threadIdx.z)) * 8 +
-                          (threadIdx.x) &
-                      7] =
+                          threadIdx.x & 7] =
       ((half)((((uint*)buf_dyn_shmem)[ax0_ax1_fused_0_1 * 16 + threadIdx.z * 8 + threadIdx.y * 4 +
                                           threadIdx.x >>
                                       3 + 4096] >>
