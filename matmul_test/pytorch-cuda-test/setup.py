@@ -7,6 +7,7 @@ nvcc_flags = [
     "-U__CUDA_NO_HALF_CONVERSIONS__",
     "-U__CUDA_NO_HALF2_OPERATORS__",
     "-use_fast_math",
+    # "-G",
 ]
 
 

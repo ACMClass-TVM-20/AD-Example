@@ -327,19 +327,28 @@ extern "C" __global__ void __launch_bounds__(128)
                ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)8))) = __1;
   }
 }
+#define CUDA_CHECK(status)                                              \
+  {                                                                     \
+    cudaError_t error = status;                                         \
+    if (error != cudaSuccess) {                                         \
+      std::cerr << "Got bad cuda status: " << cudaGetErrorString(error) \
+                << " at line: " << __LINE__ << std::endl;               \
+      exit(EXIT_FAILURE);                                               \
+    }                                                                   \
+  }
 
 void fused_decode3_wrapper(torch::Tensor lv2608, torch::Tensor lv2609, torch::Tensor lv7330,
                            torch::Tensor p_output0_intermediate, int64_t b, int64_t blocksize) {
-  // 获取tensor的数据指针
   uint* lv2608_data = (uint*)(lv2608.data_ptr());
   half* lv2609_data = (half*)(lv2609.data_ptr());
   half* lv7330_data = (half*)(lv7330.data_ptr());
-  half* p_output0_data = p_output0_intermediate.data<half>();
+  half* p_output0_data = (half*)(p_output0_intermediate.data_ptr());
 
-  // 调用你的kernel
+  CUDA_CHECK(cudaFuncSetAttribute(fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel,
+                                  cudaFuncAttributeMaxDynamicSharedMemorySize, 65536));
   dim3 blocks(blocksize);  // 根据你的需求设置blocks
   dim3 threads(32, 2, 2);  // 根据你的需求设置threads
-  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel<<<blocks, threads>>>(
+  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel<<<blocks, threads, 65530>>>(
       lv2608_data, lv2609_data, lv7330_data, p_output0_data, b);
   cudaDeviceSynchronize();
 }

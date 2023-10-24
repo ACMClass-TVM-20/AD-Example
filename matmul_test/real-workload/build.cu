@@ -340,7 +340,7 @@ cast_smem_ptr_to_int(const void* const smem_ptr)
   #define int64_t long long
   #define uint64_t unsigned long long
 #endif
-extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel(uint* __restrict__ lv2608, half* __restrict__ lv2609, half* __restrict__ lv7330, half* __restrict__ p_output0_intermediate, int64_t b) {
+extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel_1(half* __restrict__ lv7330, half* __restrict__ p_output0_intermediate, half* __restrict__ p_output0_intermediate_1, int64_t b) {
   extern __shared__ uchar buf_dyn_shmem[];
   float var_NT_matmul_intermediate_reindex_shared_dyn_warp[128];
   half lv7330_reindex_shared_dyn_warp[32];
@@ -357,11 +357,8 @@ var_NT_matmul_intermediate_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0
     for (int64_t ax0_ax1_fused_0 = 0; ax0_ax1_fused_0 < (int64_t)4; ++ax0_ax1_fused_0) {
       *(uint4*)(((half*)buf_dyn_shmem) + ((((((ax0_ax1_fused_0 * (int64_t)1024) + (((int64_t)threadIdx.z) * (int64_t)512)) + (((int64_t)threadIdx.y) * (int64_t)256)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)32)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)8)) + (int64_t)4096)) = *(uint4*)(lv7330 + ((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)));
     }
-    *(uint4*)(((uint*)buf_dyn_shmem) + ((((((int64_t)threadIdx.z) * (int64_t)256) + (((int64_t)threadIdx.y) * (int64_t)128)) + (((int64_t)threadIdx.x) * (int64_t)4)) + (int64_t)4096)) = *(uint4*)(lv2608 + ((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)65536) + (((int64_t)threadIdx.z) * (int64_t)32768)) + (((int64_t)threadIdx.y) * (int64_t)16384)) + (((int64_t)threadIdx.x) * (int64_t)512)) + (ax3_0_0 * (int64_t)4)));
-    ((half*)buf_dyn_shmem)[((((((int64_t)threadIdx.z) * (int64_t)64) + (((int64_t)threadIdx.y) * (int64_t)32)) + ((int64_t)threadIdx.x)) + (int64_t)9216)] = lv2609[((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)16384) + (((int64_t)threadIdx.z) * (int64_t)8192)) + (((int64_t)threadIdx.y) * (int64_t)4096)) + (((int64_t)threadIdx.x) * (int64_t)128)) + ax3_0_0)];
-    for (int64_t ax0_ax1_fused_0_1 = 0; ax0_ax1_fused_0_1 < (int64_t)32; ++ax0_ax1_fused_0_1) {
-      __syncthreads();
-      ((half*)buf_dyn_shmem)[(((((ax0_ax1_fused_0_1 * (int64_t)128) + (((int64_t)threadIdx.z) * (int64_t)64)) + (((int64_t)threadIdx.y) * (int64_t)32)) + (((((int64_t)threadIdx.x) >> (int64_t)3) ^ (((ax0_ax1_fused_0_1 & (int64_t)1) * (int64_t)2) + ((int64_t)threadIdx.z))) * (int64_t)8)) + (((int64_t)threadIdx.x) & (int64_t)7))] = ((((half)((((uint*)buf_dyn_shmem)[(((((ax0_ax1_fused_0_1 * (int64_t)16) + (((int64_t)threadIdx.z) * (int64_t)8)) + (((int64_t)threadIdx.y) * (int64_t)4)) + (((int64_t)threadIdx.x) >> (int64_t)3)) + (int64_t)4096)] >> (((uint)(((int64_t)threadIdx.x) & (int64_t)7)) * (uint)4)) & (uint)15)) - __float2half_rn(7.000000e+00f)) * ((half*)buf_dyn_shmem)[((((ax0_ax1_fused_0_1 * (int64_t)4) + (((int64_t)threadIdx.z) * (int64_t)2)) + ((int64_t)threadIdx.y)) + (int64_t)9216)]);
+    for (int64_t ax0_ax1_fused_0_1 = 0; ax0_ax1_fused_0_1 < (int64_t)4; ++ax0_ax1_fused_0_1) {
+      *(uint4*)(((half*)buf_dyn_shmem) + (((((ax0_ax1_fused_0_1 * (int64_t)1024) + (((int64_t)threadIdx.z) * (int64_t)512)) + (((int64_t)threadIdx.y) * (int64_t)256)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)32)) + (((((int64_t)threadIdx.x) & (int64_t)3) ^ (((int64_t)threadIdx.x) >> (int64_t)3)) * (int64_t)8))) = *(uint4*)(p_output0_intermediate_1 + ((((((((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)524288) + (ax0_ax1_fused_0_1 * (int64_t)131072)) + (((int64_t)threadIdx.z) * (int64_t)65536)) + (((int64_t)threadIdx.y) * (int64_t)32768)) + ((((int64_t)threadIdx.x) >> (int64_t)2) * (int64_t)4096)) + (ax3_0_0 * (int64_t)32)) + ((((int64_t)threadIdx.x) & (int64_t)3) * (int64_t)8)));
     }
     __syncthreads();
     for (int64_t ax3_0_1 = 0; ax3_0_1 < (int64_t)2; ++ax3_0_1) {
@@ -433,6 +430,72 @@ var_NT_matmul_intermediate_reindex_shared_dyn_warp[((ax1_0_3_init * 32) + (ax2_0
     ((half2*)(&(__1.w)))->y = (half)(((float2*)(&(v_.w)))->y);
     *(uint4*)(p_output0_intermediate + ((((((((((int64_t)blockIdx.x) / (int64_t)86) * (int64_t)1409024) + (ax0_ax1_fused_0_2 * (int64_t)88064)) + (((int64_t)threadIdx.z) * (int64_t)44032)) + (((int64_t)threadIdx.y) * (int64_t)22016)) + ((((int64_t)threadIdx.x) >> (int64_t)4) * (int64_t)11008)) + ((((int64_t)blockIdx.x) % (int64_t)86) * (int64_t)128)) + ((((int64_t)threadIdx.x) & (int64_t)15) * (int64_t)8))) = __1;
   }
+}
+
+extern "C" __global__ void __launch_bounds__(128) fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel(uint* __restrict__ lv2608, half* __restrict__ lv2609, half* __restrict__ p_output0_intermediate_1) {
+  extern __shared__ uchar buf_dyn_shmem[];
+  uint2 __1;
+    uint2 __2;
+      uint2 __3;
+      uint4 __4;
+        uint4 __5;
+          uint4 v_ = make_uint4(lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))]);
+          uint4 v__1 = make_uint4(((uint)0)+((uint)4*0), ((uint)0)+((uint)4*1), ((uint)0)+((uint)4*2), ((uint)0)+((uint)4*3));
+          __5.x = (v_.x >> v__1.x);
+          __5.y = (v_.y >> v__1.y);
+          __5.z = (v_.z >> v__1.z);
+          __5.w = (v_.w >> v__1.w);
+        uint4 v__2 = make_uint4((uint)15, (uint)15, (uint)15, (uint)15);
+        __4.x = (__5.x & v__2.x);
+        __4.y = (__5.y & v__2.y);
+        __4.z = (__5.z & v__2.z);
+        __4.w = (__5.w & v__2.w);
+      ((half2*)(&(__3.x)))->x = (half)(__4.x);
+      ((half2*)(&(__3.x)))->y = (half)(__4.y);
+      ((half2*)(&(__3.y)))->x = (half)(__4.z);
+      ((half2*)(&(__3.y)))->y = (half)(__4.w);
+      uint2 v__3 = make_uint2(__pack_half2(__float2half_rn(7.000000e+00f), __float2half_rn(7.000000e+00f)), __pack_half2(__float2half_rn(7.000000e+00f), __float2half_rn(7.000000e+00f)));
+      ((half2*)(&(__2.x)))->x = (((half2*)(&(__3.x)))->x-((half2*)(&(v__3.x)))->x);
+      ((half2*)(&(__2.x)))->y = (((half2*)(&(__3.x)))->y-((half2*)(&(v__3.x)))->y);
+      ((half2*)(&(__2.y)))->x = (((half2*)(&(__3.y)))->x-((half2*)(&(v__3.y)))->x);
+      ((half2*)(&(__2.y)))->y = (((half2*)(&(__3.y)))->y-((half2*)(&(v__3.y)))->y);
+    uint2 v__4 = make_uint2(__pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]), __pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]));
+    ((half2*)(&(__1.x)))->x = (((half2*)(&(__2.x)))->x*((half2*)(&(v__4.x)))->x);
+    ((half2*)(&(__1.x)))->y = (((half2*)(&(__2.x)))->y*((half2*)(&(v__4.x)))->y);
+    ((half2*)(&(__1.y)))->x = (((half2*)(&(__2.y)))->x*((half2*)(&(v__4.y)))->x);
+    ((half2*)(&(__1.y)))->y = (((half2*)(&(__2.y)))->y*((half2*)(&(v__4.y)))->y);
+  *(uint2*)(p_output0_intermediate_1 + ((((int)blockIdx.x) * 1024) + (((int)threadIdx.x) * 8))) = __1;
+  uint2 __6;
+    uint2 __7;
+      uint2 __8;
+      uint4 __9;
+        uint4 __10;
+          uint4 v__5 = make_uint4(lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))], lv2608[((((int)blockIdx.x) * 128) + ((int)threadIdx.x))]);
+          uint4 v__6 = make_uint4(((uint)16)+((uint)4*0), ((uint)16)+((uint)4*1), ((uint)16)+((uint)4*2), ((uint)16)+((uint)4*3));
+          __10.x = (v__5.x >> v__6.x);
+          __10.y = (v__5.y >> v__6.y);
+          __10.z = (v__5.z >> v__6.z);
+          __10.w = (v__5.w >> v__6.w);
+        uint4 v__7 = make_uint4((uint)15, (uint)15, (uint)15, (uint)15);
+        __9.x = (__10.x & v__7.x);
+        __9.y = (__10.y & v__7.y);
+        __9.z = (__10.z & v__7.z);
+        __9.w = (__10.w & v__7.w);
+      ((half2*)(&(__8.x)))->x = (half)(__9.x);
+      ((half2*)(&(__8.x)))->y = (half)(__9.y);
+      ((half2*)(&(__8.y)))->x = (half)(__9.z);
+      ((half2*)(&(__8.y)))->y = (half)(__9.w);
+      uint2 v__8 = make_uint2(__pack_half2(__float2half_rn(7.000000e+00f), __float2half_rn(7.000000e+00f)), __pack_half2(__float2half_rn(7.000000e+00f), __float2half_rn(7.000000e+00f)));
+      ((half2*)(&(__7.x)))->x = (((half2*)(&(__8.x)))->x-((half2*)(&(v__8.x)))->x);
+      ((half2*)(&(__7.x)))->y = (((half2*)(&(__8.x)))->y-((half2*)(&(v__8.x)))->y);
+      ((half2*)(&(__7.y)))->x = (((half2*)(&(__8.y)))->x-((half2*)(&(v__8.y)))->x);
+      ((half2*)(&(__7.y)))->y = (((half2*)(&(__8.y)))->y-((half2*)(&(v__8.y)))->y);
+    uint2 v__9 = make_uint2(__pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]), __pack_half2(lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))], lv2609[((((int)blockIdx.x) * 32) + (((int)threadIdx.x) >> 2))]));
+    ((half2*)(&(__6.x)))->x = (((half2*)(&(__7.x)))->x*((half2*)(&(v__9.x)))->x);
+    ((half2*)(&(__6.x)))->y = (((half2*)(&(__7.x)))->y*((half2*)(&(v__9.x)))->y);
+    ((half2*)(&(__6.y)))->x = (((half2*)(&(__7.y)))->x*((half2*)(&(v__9.y)))->x);
+    ((half2*)(&(__6.y)))->y = (((half2*)(&(__7.y)))->y*((half2*)(&(v__9.y)))->y);
+  *(uint2*)(p_output0_intermediate_1 + (((((int)blockIdx.x) * 1024) + (((int)threadIdx.x) * 8)) + 4)) = __6;
 }
 
 

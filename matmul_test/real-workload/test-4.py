@@ -177,19 +177,19 @@ input_quantized_torch = [
     input_dequantized_torch[1],
     input_dequantized_torch[2],
 ]
-input_quantized_tvm = [
-    weight_quantized_tvm_move[0],
-    weight_quantized_tvm_move[1],
-    tvm.nd.array(input_dequantized_torch[1].detach().cpu().numpy(), dev),
-    tvm.nd.array(input_dequantized_torch[2].detach().cpu().numpy(), dev),
-]
+# input_quantized_tvm = [
+#     weight_quantized_tvm_move[0],
+#     weight_quantized_tvm_move[1],
+#     tvm.nd.array(input_dequantized_torch[1].detach().cpu().numpy(), dev),
+#     tvm.nd.array(input_dequantized_torch[2].detach().cpu().numpy(), dev),
+# ]
 
 # tvm_res = vm["main"](*input_quantized_tvm[3:])
 
 # torch result
 torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
 torch_res_0 = input_dequantized_torch[1] @ input_dequantized_torch[0].T
-
+print("start run")
 my_extension.fused_decode3(
     input_quantized_torch[0],
     input_quantized_torch[1],
@@ -198,12 +198,13 @@ my_extension.fused_decode3(
     b,
     b * s * 11008 // 128 // 128,
 )
+print("end run")
 
-close = np.allclose(torch_res_0.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
-if not close:
-    print("torch:\n", torch_res_0.detach().cpu().numpy())
-    print("tvm:\n", tvm_res.numpy())
-    assert close
+# close = np.allclose(torch_res_0.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
+# if not close:
+#     print("torch:\n", torch_res_0.detach().cpu().numpy())
+#     print("tvm:\n", tvm_res.numpy())
+#     assert close
 
 close = np.allclose(
     torch_res_0.detach().cpu().numpy(),
