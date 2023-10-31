@@ -11,3 +11,6 @@ exec.so
 build
 dist
 *.egg-info
+before.py
+after.py
+build.cu

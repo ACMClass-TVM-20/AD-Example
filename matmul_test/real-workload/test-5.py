@@ -27,6 +27,7 @@ import tvm.dlight as dl
 import sys
 import os
 
+
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
@@ -37,37 +38,33 @@ class Module:
     def fused_matmul1_cast13(p_A: T.handle, p_B: T.handle, p_O: T.handle):
         T.func_attr({"tir.noalias": T.bool(True)})
         b = T.int64()
-        A = T.match_buffer(p_A, (b, T.int64(32), T.int64(512), T.int64(512)), "float16")
-        B = T.match_buffer(p_B, (b, T.int64(32), T.int64(512), T.int64(128)), "float16")
-        O = T.match_buffer(p_O, (b, T.int64(32), T.int64(512), T.int64(128)), "float16")
+        A = T.match_buffer(p_A, (b, T.int64(4096), T.int64(4096)), "float16")
+        B = T.match_buffer(p_B, (T.int64(4096), T.int64(4096)), "float16")
+        O = T.match_buffer(p_O, (b, T.int64(4096), T.int64(4096)), "float16")
         # with T.block("root"):
-        var_matmul_intermediate = T.alloc_buffer((b, T.int64(32), T.int64(512), T.int64(128)))
-        for i0, i1, i2, i3, k in T.grid(b, T.int64(32), T.int64(512), T.int64(128), T.int64(512)):
+        var_matmul_intermediate = T.alloc_buffer((b, T.int64(4096), T.int64(4096)))
+        for i0, i1, i2, k in T.grid(b, T.int64(4096), T.int64(4096), T.int64(4096)):
             with T.block("matmul"):
-                v_i0, v_i1, v_i2, v_i3, v_k = T.axis.remap("SSSSR", [i0, i1, i2, i3, k])
-                T.reads(A[v_i0, v_i1, v_i2, v_k], B[v_i0, v_i1, v_k, v_i3])
-                T.writes(var_matmul_intermediate[v_i0, v_i1, v_i2, v_i3])
+                v_i0, v_i1, v_i2, v_k = T.axis.remap("SSSR", [i0, i1, i2, k])
                 with T.init():
-                    var_matmul_intermediate[v_i0, v_i1, v_i2, v_i3] = T.float32(0)
-                var_matmul_intermediate[v_i0, v_i1, v_i2, v_i3] = var_matmul_intermediate[v_i0, v_i1, v_i2, v_i3] + T.Cast("float32", A[v_i0, v_i1, v_i2, v_k]) * T.Cast("float32", B[v_i0, v_i1, v_k, v_i3])
-        for i0, i1, i2, i3 in T.grid(b, T.int64(32), T.int64(512), T.int64(128)):
+                    var_matmul_intermediate[v_i0, v_i1, v_i2] = T.float32(0)
+                var_matmul_intermediate[v_i0, v_i1, v_i2] = var_matmul_intermediate[v_i0, v_i1, v_i2] + T.Cast("float32", A[v_i0, v_k, v_i1]) * T.Cast("float32", B[v_i2, v_k])
+        for i0, i1, i2 in T.grid(b, T.int64(4096), T.int64(4096)):
             with T.block("compute"):
-                v_i0, v_i1, v_i2, v_i3 = T.axis.remap("SSSS", [i0, i1, i2, i3])
-                T.reads(var_matmul_intermediate[v_i0, v_i1, v_i2, v_i3])
-                T.writes(O[v_i0, v_i1, v_i2, v_i3])
-                O[v_i0, v_i1, v_i2, v_i3] = T.Cast("float16", var_matmul_intermediate[v_i0, v_i1, v_i2, v_i3])
+                v_i0, v_i1, v_i2 = T.axis.remap("SSS", [i0, i1, i2])
+                O[v_i0, v_i1, v_i2] = T.Cast("float16", var_matmul_intermediate[v_i0, v_i1, v_i2])
 
     @R.function
     def main(
-        x: R.Tensor(("b", 32, 512, 512), "float16"),
-        y: R.Tensor(("b", 32, 512, 128), "float16"),
+        x: R.Tensor(("b", 4096, 4096), "float16"),
+        y: R.Tensor((4096, 4096), "float16"),
     ):
         cls = Module
         b = T.int64()
         out = R.call_tir(
             cls.fused_matmul1_cast13,
             (x, y),
-            R.Tensor((b, 32, 512, 128), "float16"),
+            R.Tensor((b, 4096, 4096), "float16"),
         )
         return out
 # fmt: on
@@ -97,8 +94,7 @@ mod = LiftTIRGlobalBufferAlloc()(mod)
 print(mod.script(), file=open(after_path, "w"))
 print("<schedule done>")
 
-# build
-# func = next(mod.functions.values())
+func = next(mod.functions.values())
 with tvm.transform.PassContext(config={"tir.use_async_copy": 1}):
     ex = relax.build(mod, target=target)
 if target.kind.name == "cuda":
@@ -112,15 +108,15 @@ b = 4
 atol, rtol = 1e-3, 1e-3
 
 inputs_torch = [
-    torch.randn(b, 32, 512, 512, dtype=torch.float16).cuda(),
-    torch.randn(b, 32, 512, 128, dtype=torch.float16).cuda(),
+    torch.randn(b, 4096, 4096, dtype=torch.float16).cuda(),
+    torch.randn(4096, 4096, dtype=torch.float16).cuda(),
 ]
 inputs_tvm = [tvm.nd.array(x.detach().cpu().numpy(), dev) for x in inputs_torch]
 
 tvm_res = vm["main"](*inputs_tvm)
 
 torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-torch_res = inputs_torch[0] @ inputs_torch[1]
+torch_res = inputs_torch[0].mT @ inputs_torch[1].mT
 
 close = np.allclose(torch_res.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
 if not close:
@@ -130,16 +126,16 @@ if not close:
 
 print("<correctness check done>")
 
-# report = vm.profile("main", *tvm_quantized_inputs)
-# print(report)
+report = vm.profile("main", *inputs_tvm)
+print(report)
 
-# operator_call, operator_tm = None, None
-# for op in report.calls:
-#     if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
-#         operator_call, operator_tm = op, op["Duration (us)"].microseconds
-# print(operator_call)
+operator_call, operator_tm = None, None
+for op in report.calls:
+    if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
+        operator_call, operator_tm = op, op["Duration (us)"].microseconds
+print(operator_call)
 
 
-# tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
-# print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
-# print("<performance check done>")
+tflops = b * 4096 * 4096 * 4096 * 2 / operator_tm / 1e6
+print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
+print("<performance check done>")
