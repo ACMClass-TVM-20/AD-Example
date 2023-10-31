@@ -41,15 +41,10 @@ import tvm.dlight as dl
 
 import sys
 import os
-topi.matmul
+
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 from dequantization.quantize import quantize_param, dequantize_param_optimize, q3f16_1, q4f16_1
-
-
-def flush():
-    cache = torch.empty(int(256e6), dtype=torch.int8, device="cuda")
-    cache.zero_()
 
 
 @I.ir_module

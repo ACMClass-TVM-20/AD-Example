@@ -1,3 +1,11 @@
+# NN, NT, TN, NN matmul
+# on a100:
+# TT: 249.4753308550186 TFLOPS
+# NT: 252.4076908753576 TFLOPS
+# TN: 245.03475640883354 TFLOPS
+# NN: 251.34417483768527 TFLOPS
+
+
 import os
 import sys
 from typing import List
@@ -48,7 +56,7 @@ class Module:
                 v_i0, v_i1, v_i2, v_k = T.axis.remap("SSSR", [i0, i1, i2, k])
                 with T.init():
                     var_matmul_intermediate[v_i0, v_i1, v_i2] = T.float32(0)
-                var_matmul_intermediate[v_i0, v_i1, v_i2] = var_matmul_intermediate[v_i0, v_i1, v_i2] + T.Cast("float32", A[v_i0, v_k, v_i1]) * T.Cast("float32", B[v_i2, v_k])
+                var_matmul_intermediate[v_i0, v_i1, v_i2] = var_matmul_intermediate[v_i0, v_i1, v_i2] + T.Cast("float32", A[v_i0, v_k, v_i1]) * T.Cast("float32", B[v_k, v_i2])
         for i0, i1, i2 in T.grid(b, T.int64(4096), T.int64(4096)):
             with T.block("compute"):
                 v_i0, v_i1, v_i2 = T.axis.remap("SSS", [i0, i1, i2])
@@ -69,8 +77,8 @@ class Module:
         return out
 # fmt: on
 
-target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
-# target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
+# target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
+target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
 before_path = os.path.join(cur_path, "before.py")
@@ -116,7 +124,7 @@ inputs_tvm = [tvm.nd.array(x.detach().cpu().numpy(), dev) for x in inputs_torch]
 tvm_res = vm["main"](*inputs_tvm)
 
 torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-torch_res = inputs_torch[0].mT @ inputs_torch[1].mT
+torch_res = inputs_torch[0].mT @ inputs_torch[1]
 
 close = np.allclose(torch_res.detach().cpu().numpy(), tvm_res.numpy(), atol=atol, rtol=rtol)
 if not close:

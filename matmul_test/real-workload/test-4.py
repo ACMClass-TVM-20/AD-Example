@@ -1,3 +1,5 @@
+# Attention matmul: 88.30113684210527 TFLOPS
+
 import os
 import sys
 from typing import List
@@ -72,8 +74,8 @@ class Module:
         return out
 # fmt: on
 
-target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
-# target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
+# target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
+target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
 before_path = os.path.join(cur_path, "before.py")
@@ -130,16 +132,15 @@ if not close:
 
 print("<correctness check done>")
 
-# report = vm.profile("main", *tvm_quantized_inputs)
-# print(report)
+report = vm.profile("main", *inputs_tvm)
+print(report)
 
-# operator_call, operator_tm = None, None
-# for op in report.calls:
-#     if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
-#         operator_call, operator_tm = op, op["Duration (us)"].microseconds
-# print(operator_call)
+operator_call, operator_tm = None, None
+for op in report.calls:
+    if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
+        operator_call, operator_tm = op, op["Duration (us)"].microseconds
+print(operator_call)
 
-
-# tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
-# print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
-# print("<performance check done>")
+tflops = b * 32 * 512 * 512 * 128 * 2 / operator_tm / 1e6
+print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
+print("<performance check done>")

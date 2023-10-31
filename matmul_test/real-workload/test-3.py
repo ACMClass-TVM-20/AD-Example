@@ -1,9 +1,5 @@
-"""Test: fp16 mixed precision matmul mma
-- Without unroll: 99.60745695626359
-    - 208 regs
-- With unroll: 144.07358026271964
-- With pipeline: 96.57410868904708
-    - 167 regs
+"""Decode + nn matmul
+Matmul part: 205.65025408247007 TFLOPS
 """
 import os
 import sys
@@ -185,16 +181,16 @@ if not close:
 
 print("<correctness check done>")
 
-# report = vm.profile("main", *tvm_quantized_inputs)
-# print(report)
+report = vm.profile("main", *weight_quantized_tvm, *inputs_tvm)
+print(report)
 
-# operator_call, operator_tm = None, None
-# for op in report.calls:
-#     if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
-#         operator_call, operator_tm = op, op["Duration (us)"].microseconds
-# print(operator_call)
+operator_call, operator_tm = None, None
+for op in report.calls:
+    if operator_call is None or op["Duration (us)"].microseconds > operator_tm:
+        operator_call, operator_tm = op, op["Duration (us)"].microseconds
+print(operator_call)
 
 
-# tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
-# print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
-# print("<performance check done>")
+tflops = b * s * 11008 * 4096 * 2 / operator_tm / 1e6
+print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
+print("<performance check done>")
