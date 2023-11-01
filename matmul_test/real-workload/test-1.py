@@ -12,6 +12,13 @@ b=1
      20.4           262525          3   87508.3   87103.0     84063     91359       3664.8  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel
      16.5           212191          1  212191.0  212191.0    212191    212191          0.0  void cutlass::Kernel<cutlass_80_tensorop_f16_s16816gemm_relu_f16_128x128_32x5_tn_align8>(T1::Params)
       6.6            85279          1   85279.0   85279.0     85279     85279          0.0  dequantize_kernel
+b=2
+Time (%)  Total Time (ns)  Instances  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)                                                 Name
+ --------  ---------------  ---------  --------  --------  --------  --------  -----------  --------------------------------------------------------------------------------------------------
+     43.0           433757          1  433757.0  433757.0    433757    433757          0.0  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel_1
+     39.8           401084          1  401084.0  401084.0    401084    401084          0.0  sm80_xmma_gemm_f16f16_f16f32_f32_tn_n_tilesize192x128x32_stage3_warpsize4x2x1_tensor16x8x16_kernel
+      9.0            90399          1   90399.0   90399.0     90399     90399          0.0  fused_fused_decode3_fused_NT_matmul21_cast21_add5_silu2_kernel
+      8.2            83136          1   83136.0   83136.0     83136     83136          0.0  dequantize_kernel
 """
 import os
 import sys
@@ -152,7 +159,7 @@ if target.kind.name == "cuda":
 ex.export_library(ex_path)
 vm = relax.VirtualMachine(ex, dev, profile=True)
 
-b = 4
+b = 2
 s = 512
 
 atol, rtol = 1e-3, 1e-3
