@@ -14,3 +14,5 @@ dist
 before.py
 after.py
 build.cu
+*.mtl
+tune/

@@ -445,7 +445,8 @@ def dequantize_param_optimize(
     # mod.show()
 
     # target, dev = tvm.target.Target("nvidia/geforce-rtx-4090"), tvm.cuda()
-    target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
+    # target, dev = tvm.target.Target("nvidia/nvidia-a100"), tvm.cuda()
+    target, dev = tvm.target.Target("apple/m2-gpu"), tvm.metal()
     ex = relax.build(mod, target=target)
     vm = relax.VirtualMachine(ex, dev, profile=True)
     # print(ex.mod.imported_modules[0].imported_modules[0].get_source())
