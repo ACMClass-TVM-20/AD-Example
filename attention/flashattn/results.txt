@@ -1,0 +1,13 @@
+res
+55ms 0.46854188683636366 TFlops
+18.5ms
+
+optimized
+21ms
+
+
+Backward
+17ms
+
+
+236ms 0.1 TFlops
