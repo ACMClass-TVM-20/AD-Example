@@ -107,7 +107,7 @@ def transform_mod(mod):
         [("transpose_matmul_fuse", *transpose_matmul_pattern())]
     )(mod)
     mod = relax.transform.LegalizeOps()(mod)
-    mod = relax.transform.FuseT)
+    mod = relax.transform.FuseTIR()(mod)
     return mod
 
 
@@ -129,7 +129,7 @@ def build_mod(mod):
     ex.export_library(ex_path)
     print("<build done>")
     return ex
-IR()(mod)
+
     mod = relax.transform.FuseOpsByPattern([("decode_matmul", *decode_matmul_pattern())])(mod)
     mod = relax.transform.FuseTIR()(mod)
     mod = relax.transform.AnnotateTIROpPattern()(mod)
@@ -137,7 +137,7 @@ IR()(mod)
     mod = relax.transform.FuseTIR()(mod)
 
     print(mod.script(), file=open(before_path, "w"))
-    print("<transform done>"
+    print("<transform done>")
 
 mod = get_mod()
 mod = transform_mod(mod)

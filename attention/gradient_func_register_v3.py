@@ -51,26 +51,28 @@ class Module:
     @R.function
     def main(q: R.Tensor, k: R.Tensor, v: R.Tensor, scale: relax.Constant):
         cls = Module
-        O = R.call_op_with_backward(cls.forward, (q, k, v, scale), cls.backward, require_grad=[0, 1, 2])
+        O = R.call_op_with_backward(
+            cls.forward, (q, k, v, scale), cls.backward, require_grad=[0, 1, 2]
+        )
         return O
 
 
 # 3. user interface (defined by tvm in relax.testing.autograd)
 
-_save_list: List[List[relax.Var]] = []
-_require_grad_index: List[List[int]] = []
+_save_stack: List[List[relax.Var]] = []
+_require_grad_stack: List[List[int]] = []
 
 
 def save_for_backward(*args):
     """Save states for backward computation."""
-    assert len(_save_list) != 0
-    _save_list[-1].append(args)
+    assert len(_save_stack) != 0
+    _save_stack[-1].append(args)
 
 
 def set_require_grad(indices: List[int]):
     """Set the indices of input tensors that require gradient. If it is not called, the default
     is all inputs require gradient."""
-    _require_grad_index[-1].extend(indices)
+    _require_grad_stack[-1].extend(indices)
 
 
 class Function:
@@ -96,20 +98,19 @@ class Function:
         forward_args = [relax.Var(arg.name_hint, arg.struct_info) for arg in args]
         with bb.function("forward_save_state", forward_args):
             with bb.dataflow():
-                _save_list.append([])
-                _require_grad_index.append([])
+                _save_stack.append([])
+                _require_grad_stack.append([])
 
                 res = cls.forward_save_state(*forward_args)
 
                 out = bb.emit_output(res)
 
-                saved_tensors = [bb.emit_output(arg) for arg in _save_list[-1]]
-                require_grad = _require_grad_index[-1]
-                _save_list.pop()
-                _require_grad_index.pop()
+                saved_tensors = [bb.emit_output(arg) for arg in _save_stack[-1]]
+                require_grad = _require_grad_stack[-1]
+                _save_stack.pop()
+                _require_grad_stack.pop()
 
             gvar_forward_with_state = bb.emit_func_output((out, saved_tensors))
-
 
         backward_args = [relax.Var(arg.name_hint, arg.struct_info) for arg in [out] + saved_tensors]
         with bb.function("backward", backward_args):
@@ -119,7 +120,7 @@ class Function:
             gvar_backward = bb.emit_func_output(out)
 
         out = nn.emit(
-            relax.call_op_with_grad(
+            relax.call_op_with_backward(
                 gvar_forward_with_state,
                 args,
                 gvar_backward,
@@ -138,11 +139,6 @@ class FlashAttention(Function):
         L = nn.emit(res[1])
         save_for_backward(Q, K, V, L, scale)
         set_require_grad([0, 1, 2])
-        return O
-
-    @staticmethod
-    def forward(Q: R.Tensor, K: R.Tensor, V: R.Tensor, scale):
-        O = nn.emit_te(attention_func_simple, Q, K, V, scale)
         return O
 
     @staticmethod
