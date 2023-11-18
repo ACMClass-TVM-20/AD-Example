@@ -33,14 +33,14 @@ import tvm.dlight as dl
 check_correctness, check_performance, check_register_usage = True, True, False
 
 # batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
-batch, shape_m, shape_k, shape_n = 1, -512, 4096, 4096
-transpose_A, transpose_B = False, True
+batch, shape_m, shape_k, shape_n = 1, 4096, 4096, 4096
+transpose_A, transpose_B = True, True
 
 if len(sys.argv) > 1:
     batch, shape_m, shape_k, shape_n = [int(x) for x in sys.argv[1:5]]
 
-dtype, fallback_dtype, shape_dtype = "float16", "float32", "int64"
-atol, rtol = 1e-3, 1e-3
+dtype, fallback_dtype, shape_dtype = "float16", "float16", "int64"
+atol, rtol = (1e-3, 1e-3) if fallback_dtype == "float32" else (2, 0.1)
 
 print(f"Running with dtype, fallback_dtype, shape_dtype = {dtype, fallback_dtype, shape_dtype}")
 print(f"Running with batch, shape_m, shape_k, shape_n = {batch, shape_m, shape_k, shape_n}")
@@ -91,9 +91,6 @@ cubin_path = os.path.join(cur_path, "build.cubin")
 
 
 def get_mod():
-    def transpose_if(var, cond):
-        return R.permute_dims(var) if cond else var
-
     A = relax.Var("A", relax.TensorStructInfo(tvm_shape_1, dtype))
     B = relax.Var("B", relax.TensorStructInfo(tvm_shape_2, dtype))
     bb = BlockBuilder()
@@ -101,8 +98,8 @@ def get_mod():
         with bb.dataflow():
             lv = bb.emit(
                 relax.op.matmul(
-                    transpose_if(A, transpose_A),
-                    transpose_if(B, transpose_B),
+                    R.permute_dims(A, [0, 2, 1]) if transpose_A else A,
+                    R.permute_dims(B, [1, 0]) if transpose_B else B,
                     out_dtype=fallback_dtype,
                 )
             )
@@ -110,28 +107,44 @@ def get_mod():
         bb.emit_func_output(gv)
 
     mod = bb.get()
-    mod.show(None, False)
     return mod
 
 
 def transform_mod(mod):
     def transpose_matmul_pattern():
-        w = wildcard()
+        annotations = {}
         x = wildcard()
-        wT = is_op("relax.permute_dims")(w)
-        o = is_op("relax.matmul")(x, wT)
-        annotations = {"o": o, "w": w, "x": x, "wT": wT}
+        w = wildcard()
+        annotations.update({"x": x, "w": w})
+        if transpose_A:
+            x = is_op("relax.permute_dims")(x)
+            annotations["xT"] = x
+        if transpose_B:
+            w = is_op("relax.permute_dims")(w)
+            annotations["wT"] = w
+        o = is_op("relax.matmul")(x, w)
+        annotations["o"] = o
 
         def _check(context: relax.transform.PatternCheckContext) -> bool:
-            transpose_call = context.annotated_expr["wT"]
-            ndim = transpose_call.args[0].struct_info.ndim
-            if ndim == -1:
-                return False
-            if ndim == 2 and transpose_call.attrs.axes is None:
-                return True
-            axes = list(range(ndim))
-            axes[-1], axes[-2] = axes[-2], axes[-1]
-            return list(transpose_call.attrs.axes) == axes
+            def test(transpose_call):
+                ndim = transpose_call.args[0].struct_info.ndim
+                if ndim == -1:
+                    return False
+                if ndim == 2 and transpose_call.attrs.axes is None:
+                    return True
+                axes = list(range(ndim))
+                axes[-1], axes[-2] = axes[-2], axes[-1]
+                return list(transpose_call.attrs.axes) == axes
+
+            if transpose_A:
+                transpose_call = context.annotated_expr["xT"]
+                if not test(transpose_call):
+                    return False
+            if transpose_B:
+                transpose_call = context.annotated_expr["wT"]
+                if not test(transpose_call):
+                    return False
+            return True
 
         return o, annotations, _check
 
@@ -179,8 +192,8 @@ def fn_check_correctness(
 
     ex(tvm_inputs[0], tvm_inputs[1], tvm_inputs[2])
     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-    torch_res = (torch_inputs[0].T if transpose_A else torch_inputs[0]) @ (
-        torch_inputs[1].T if transpose_B else torch_inputs[1]
+    torch_res = (torch_inputs[0].mT if transpose_A else torch_inputs[0]) @ (
+        torch_inputs[1].mT if transpose_B else torch_inputs[1]
     )
 
     close = np.allclose(

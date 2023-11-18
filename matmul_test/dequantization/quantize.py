@@ -309,8 +309,6 @@ class GroupQuantizationSpec:
         return list(call_te.struct_info.fields)
 
 
-
-
 q4f16_1 = GroupQuantizationSpec(
     dtype="float16",
     mode="int4",
@@ -427,19 +425,11 @@ def dequantize_param_optimize(
     blk = sch.get_child_blocks(rt_blk)[0]
     loops = sch.get_loops(blk)
     loop = sch.fuse(*loops)
-    v0, v1, v2, v3 = sch.split(loop, [None, 128, 2, 4])
+    v0, v1, v2, v3 = sch.split(loop, [None, 128, 4, 4])
     sch.bind(v0, "blockIdx.x")
     sch.bind(v1, "threadIdx.x")
     sch.unroll(v2)
     sch.vectorize(v3)
-
-    # blk1 = sch.cache_read(blk, 0, "shared.dyn")
-    # sch.compute_at(blk1, v1)
-    # blk2 = sch.cache_read(blk, 1, "local")
-    # sch.compute_at(blk2, v1)
-    # sch.annotate(v1, ann_key="software_pipeline_stage", ann_val=[0, 0, 1])
-    # sch.annotate(v1, ann_key="software_pipeline_order", ann_val=[0, 1, 2])
-    # sch.annotate(v1, ann_key="software_pipeline_async_stages", ann_val=[0])
 
     mod["dequantize"] = sch.mod["main"]
     # mod.show()
@@ -456,48 +446,49 @@ def dequantize_param_optimize(
     else:
         return vm["main"](*param)
     # 4090:
-    # 4096 * 4096: 54ms peak: 43 79%
-    # 4096 * 11008: 133ms peak: 114 85%
+    # 4096 * 4096: 54us peak: 43 79%
+    # 4096 * 11008: 133us peak: 114 85%
     # a100:
-    # 4096 * 4096: 50ms
-    # 4096 * 11008： 107ms
+    # 4096 * 4096: 50us
+    # 4096 * 11008： 107us
 
 
 if __name__ == "__main__":
     quantize_mode = q3f16_1
-    param = relax.Var("param", relax.TensorStructInfo([4096, 11008], "float16"))
-    quantized_sinfo = quantize_mode.get_dequantize_sinfo(param.struct_info)
-    quantized = [relax.Var(f"input_{i}", sinfo) for i, sinfo in enumerate(quantized_sinfo)]
-    bb = relax.BlockBuilder()
-    with bb.function("main", [*quantized]):
-        with bb.dataflow():
-            w = bb.emit_te(
-                quantize_mode.get_dequantize_func(param.struct_info),
-                *quantized,
-                primfunc_name_hint="dequantize",
-            )
-            out = bb.emit_output(w)
-        bb.emit_func_output(out)
-    mod = bb.get()
-    mod.show()
+    # quantize_mode = q3f16_1
+    # param = relax.Var("param", relax.TensorStructInfo([4096, 11008], "float16"))
+    # quantized_sinfo = quantize_mode.get_dequantize_sinfo(param.struct_info)
+    # quantized = [relax.Var(f"input_{i}", sinfo) for i, sinfo in enumerate(quantized_sinfo)]
+    # bb = relax.BlockBuilder()
+    # with bb.function("main", [*quantized]):
+    #     with bb.dataflow():
+    #         w = bb.emit_te(
+    #             quantize_mode.get_dequantize_func(param.struct_info),
+    #             *quantized,
+    #             primfunc_name_hint="dequantize",
+    #         )
+    #         out = bb.emit_output(w)
+    #     bb.emit_func_output(out)
+    # mod = bb.get()
+    # mod.show()
 
-    bb = relax.BlockBuilder()
-    with bb.function("main", [param]):
-        with bb.dataflow():
-            w_q = bb.emit_te(
-                quantize_mode.get_quantize_func(),
-                param,
-                primfunc_name_hint="quantize",
-            )
-            out = bb.emit_output(w_q)
-        bb.emit_func_output(out)
-    mod = bb.get()
-    mod.show()
+    # bb = relax.BlockBuilder()
+    # with bb.function("main", [param]):
+    #     with bb.dataflow():
+    #         w_q = bb.emit_te(
+    #             quantize_mode.get_quantize_func(),
+    #             param,
+    #             primfunc_name_hint="quantize",
+    #         )
+    #         out = bb.emit_output(w_q)
+    #     bb.emit_func_output(out)
+    # mod = bb.get()
+    # mod.show()
 
-    # weight = torch.randn(4096, 11008, dtype=torch.float16)
-    # weight_tvm = tvm.nd.array(weight.numpy())
+    weight = torch.randn(4096, 11008, dtype=torch.float16)
+    weight_tvm = tvm.nd.array(weight.numpy())
     # print(weight_tvm)
-    # quantized = quantize_param(weight_tvm, quantize_mode)
+    quantized = quantize_param(weight_tvm, quantize_mode)
     # print(quantized[0])
     # print(quantized[1])
     # dequantized = dequantize_param(quantized, weight.shape, quantize_mode)
@@ -506,6 +497,6 @@ if __name__ == "__main__":
     # np.set_printoptions(edgeitems=7, linewidth=180)
     # print(weight_tvm.numpy() - dequantized.numpy())
 
-    # dequantize_param_optimize(quantized, weight.shape, quantize_mode, True)
+    dequantize_param_optimize(quantized, weight.shape, quantize_mode, True)
     # dequantized_1 = dequantize_param_optimize(quantized, weight.shape, quantize_mode)
     # np.testing.assert_allclose(dequantized_1.numpy(), dequantized.numpy(), atol=1e-3)
