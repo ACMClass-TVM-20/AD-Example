@@ -99,7 +99,7 @@ mod = Module
 if target.kind.name != "llvm":
     with target, tvm.transform.PassContext(trace=Trace(mod)):
         # mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulTensorization())(mod)
-        mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.MatmulMac())(mod)
+        mod = dl.ApplyDefaultSchedule(dl.gpu.matmul.Matmul())(mod)
 mod = LiftTIRGlobalBufferAlloc()(mod)
 print(mod.script(), file=open(after_path, "w"))
 print("<schedule done>")

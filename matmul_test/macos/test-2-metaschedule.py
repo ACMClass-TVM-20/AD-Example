@@ -5,8 +5,10 @@ from time import monotonic
 
 import tvm
 from tvm import relax, tir, te, topi
+from tvm import meta_schedule as ms
 from tvm.dlight.gpu import fallback
 from tvm.ir.module import IRModule
+from tvm.meta_schedule.database.json_database import JSONDatabase
 from tvm.relax.analysis import estimate_memory_usage
 from tvm.relax.block_builder import BlockBuilder
 from tvm.relay import GlobalVar
@@ -42,39 +44,36 @@ def flush_cache():
 class Module:
     @T.prim_func(private=True)
     def compute(B: T.Buffer((T.int64(4096), T.int64(4096)), "float16"), p_A: T.handle, p_O: T.handle):
-        T.func_attr({"tir.noalias": T.bool(True)})
-        b = T.int64()
-        A = T.match_buffer(p_A, (b, T.int64(512), T.int64(4096)), "float16")
-        O = T.match_buffer(p_O, (b, T.int64(512), T.int64(4096)), "float16")
+        A = T.match_buffer(p_A, (T.int64(2048), T.int64(4096)), "float16")
+        O = T.match_buffer(p_O, (T.int64(2048), T.int64(4096)), "float16")
         # with T.block("root"):
-        O_intermediate = T.alloc_buffer((b, T.int64(512), T.int64(4096)))
-        for i0, i1, i2, k in T.grid(b, T.int64(512), T.int64(4096), T.int64(4096)):
+        O_intermediate = T.alloc_buffer((T.int64(2048), T.int64(4096)))
+        for i0, i1, k in T.grid(T.int64(2048), T.int64(4096), T.int64(4096)):
             with T.block("matmul"):
-                v_i0, v_i1, v_i2, v_k = T.axis.remap("SSSR", [i0, i1, i2, k])
-                T.reads(A[v_i0, v_i1, v_k], B[v_k, v_i2])
-                T.writes(O_intermediate[v_i0, v_i1, v_i2])
+                v_i0, v_i1, v_k = T.axis.remap("SSR", [i0, i1, k])
+                T.reads(A[v_i0, v_k], B[v_k, v_i1])
+                T.writes(O_intermediate[v_i0, v_i1])
                 with T.init():
-                    O_intermediate[v_i0, v_i1, v_i2] = T.float32(0)
-                O_intermediate[v_i0, v_i1, v_i2] = O_intermediate[v_i0, v_i1, v_i2] + T.Cast("float32", A[v_i0, v_i1, v_k]) * T.Cast("float32", B[v_k, v_i2])
-        for i0, i1, i2 in T.grid(b, T.int64(512), T.int64(4096)):
+                    O_intermediate[v_i0, v_i1] = T.float32(0)
+                O_intermediate[v_i0, v_i1] = O_intermediate[v_i0, v_i1] + T.Cast("float32", A[v_i0, v_k]) * T.Cast("float32", B[v_k, v_i1])
+        for i0, i1 in T.grid(T.int64(2048), T.int64(4096)):
             with T.block("compute"):
-                v_i0, v_i1, v_i2 = T.axis.remap("SSS", [i0, i1, i2])
-                T.reads(O_intermediate[v_i0, v_i1, v_i2])
-                T.writes(O[v_i0, v_i1, v_i2])
-                O[v_i0, v_i1, v_i2] = T.Cast("float16", O_intermediate[v_i0, v_i1, v_i2])
+                v_i0, v_i1 = T.axis.remap("SS", [i0, i1])
+                T.reads(O_intermediate[v_i0, v_i1])
+                T.writes(O[v_i0, v_i1])
+                O[v_i0, v_i1] = T.Cast("float16", O_intermediate[v_i0, v_i1])
 
 
     @R.function
     def main(
         w: R.Tensor((4096, 4096), "float16"),
-        x: R.Tensor(("b", 512, 4096), "float16"),
+        x: R.Tensor((2048, 4096), "float16"),
     ):
         cls = Module
-        b = T.int64()
         out = R.call_tir(
             cls.compute,
             (w, x),
-            R.Tensor((b, 512, 4096), "float16"),
+            R.Tensor((2048, 4096), "float16"),
         )
         return out
 # fmt: on
@@ -85,6 +84,7 @@ target, dev = tvm.target.Target("apple/m2-gpu"), tvm.metal()
 cur_path = os.path.dirname(os.path.abspath(__file__))
 before_path = os.path.join(cur_path, "before.py")
 after_path = os.path.join(cur_path, "after.py")
+trace_path = os.path.join(cur_path, "trace.py")
 suffix_map = {
     "cuda": ".cu",
     "metal": ".mtl",
@@ -100,15 +100,26 @@ if target.kind.name != "llvm":
     work_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tune")
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
-    with target, tvm.transform.PassContext(trace=Trace(mod)):
-        mod = tvm.transform.Sequential(
-            [
-                relax.transform.MetaScheduleTuneIRMod(
-                    params={}, work_dir=work_dir, max_trials_global=80
-                ),
-                relax.transform.MetaScheduleApplyDatabase(work_dir),
-            ]
-        )(mod)
+    # with target, tvm.transform.PassContext(trace=Trace(mod)):
+    #     mod = tvm.transform.Sequential(
+    #         [
+    #             relax.transform.MetaScheduleTuneIRMod(
+    #                 params={}, work_dir=work_dir, max_trials_global=2000
+    #             ),
+    #             relax.transform.MetaScheduleApplyDatabase(work_dir),
+    #         ]
+    #     )(mod)
+    func = mod["compute"]
+    database = ms.tir_integration.tune_tir(
+        mod=func,
+        target=target,
+        work_dir=work_dir,
+        max_trials_global=2000,
+    )
+    # database = JSONDatabase(work_dir=work_dir)
+    sch = ms.tir_integration.compile_tir(database, func, target)
+    print(sch.trace, file=open(trace_path, "w"))
+    mod["compute"] = sch.mod["main"]
 
 mod = LiftTIRGlobalBufferAlloc()(mod)
 print(mod.script(), file=open(after_path, "w"))
@@ -124,14 +135,12 @@ if target.kind.name != "llvm":
 ex.export_library(ex_path)
 vm = relax.VirtualMachine(ex, dev, profile=True)
 
-b = 4
-s = 512
 
 atol, rtol = 1e-3, 1e-3
 
 inputs = [
     torch.randn(4096, 4096, dtype=torch.float16).to("mps"),
-    torch.randn(b, s, 4096, dtype=torch.float16).to("mps"),
+    torch.randn(2048, 4096, dtype=torch.float16).to("mps"),
     # torch.zeros(b, s, 11008, dtype=torch.float16).cuda(),
 ]
 tvm_inputs = [tvm.nd.array(x.detach().cpu().numpy(), dev) for x in inputs]
@@ -162,7 +171,7 @@ for op in report.calls:
 print(operator_call)
 
 
-tflops = b * s * 4096 * 4096 * 2 / operator_tm / 1e6
+tflops = 2048 * 4096 * 4096 * 2 / operator_tm / 1e6
 print(f"Op latency: {operator_tm} us, TFlops: {tflops}")
 
 
@@ -173,7 +182,7 @@ torch_res_0 = (inputs[1].to(torch.float32) @ inputs[0].to(torch.float32)).to(tor
 torch.mps.synchronize()
 time = monotonic() - time
 
-tflops = b * s * 4096 * 4096 * 2 / time / 1e12
+tflops = 2048 * 4096 * 4096 * 2 / time / 1e12
 print(f"Torch Op latency: {time * 1e6} us, TFlops: {tflops}")
 
 

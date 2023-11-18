@@ -16,3 +16,5 @@ after.py
 build.cu
 *.mtl
 tune/
+trace.py
+.*

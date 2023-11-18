@@ -1,3 +1,5 @@
 Version 0:
 Op latency: 18983.458 us, TFlops: 3.619966221960193
 
+MS:
+Op latency: 15984.5 us, TFlops: 4.299132080202696
